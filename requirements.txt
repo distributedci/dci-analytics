@@ -1,0 +1,2 @@
+psycopg2  # ignore: use latest version of psycopg2 to avoid building it during pip install (python-psycopg2-2.5.1-4.el7.x86_64)
+requests
