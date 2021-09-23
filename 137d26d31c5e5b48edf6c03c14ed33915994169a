@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "144ac950_b4cd9d12",
+        "filename": "dci_analytics/config.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 405
+      },
+      "writtenOn": "2021-09-23T10:35:32Z",
+      "side": 1,
+      "message": "/etc/dci-analytics/config.yaml",
+      "range": {
+        "startLine": 38,
+        "startChar": 26,
+        "endLine": 38,
+        "endChar": 49
+      },
+      "revId": "137d26d31c5e5b48edf6c03c14ed33915994169a",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9eea894_cd3a0fb3",
+        "filename": "dci_analytics/config.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 405
+      },
+      "writtenOn": "2021-09-23T10:35:32Z",
+      "side": 1,
+      "message": "if possible, /etc/dci-analytics/config.yaml is better for the formatting, color in text editors and scoped to dci-analytics folder in /etc",
+      "range": {
+        "startLine": 41,
+        "startChar": 31,
+        "endLine": 41,
+        "endChar": 52
+      },
+      "revId": "137d26d31c5e5b48edf6c03c14ed33915994169a",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85dced4f_01d79112",
+        "filename": "dci_analytics/engine/elasticsearch.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 405
+      },
+      "writtenOn": "2021-09-23T10:35:32Z",
+      "side": 1,
+      "message": "use from config instead of hardcoded",
+      "range": {
+        "startLine": 21,
+        "startChar": 31,
+        "endLine": 21,
+        "endChar": 46
+      },
+      "revId": "137d26d31c5e5b48edf6c03c14ed33915994169a",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b5273de_36f6189b",
+        "filename": "dci_analytics/engine/poller.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 405
+      },
+      "writtenOn": "2021-09-23T10:35:32Z",
+      "side": 1,
+      "message": "here and in config.py ?\n\nNeed a refacto probably here",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 27
+      },
+      "revId": "137d26d31c5e5b48edf6c03c14ed33915994169a",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8eacf1f7_0ab68cf3",
+        "filename": "dci_analytics/engine/workers/task_duration_cumulated.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 405
+      },
+      "writtenOn": "2021-09-23T10:35:32Z",
+      "side": 1,
+      "message": "this should be in a unit test with job dict",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 35
+      },
+      "revId": "137d26d31c5e5b48edf6c03c14ed33915994169a",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c63ad742_028b6ff6",
+        "filename": "requirements.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 405
+      },
+      "writtenOn": "2021-09-23T10:35:32Z",
+      "side": 1,
+      "message": "For psycopg2 use the one from appstream centos 8 stream\n \npsycopg2\u003d\u003d2.7.5  # python-psycopg2-2.7.5-7.el8.src.rpm appstream\n\nFor request if you use version 2+, it only comes with centos-openstack-train\n\nrequests\u003d\u003d2.22.0  # python-requests-2.22.0-7.el8.src.rpm centos-openstack-train\n\nI don\u0027t know if we cannot use python-requests from appstream instead\n\nsix is probably not required here ?\n\nSQLAlchemy\u003d\u003d1.3.2  # python-sqlalchemy-1.3.2-2.module_el8.5.0+761+faacb0fb.src.rpm appstream\n\n\nSQLAlchemy-Utils\u003d\u003d0.34.2  # python-sqlalchemy-utils-0.34.2-2.el8.src.rpm centos-openstack-train\nSQLAlchemy-Utils is also in centos-openstack-train\nDo we need it ?",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 6,
+        "endChar": 14
+      },
+      "revId": "137d26d31c5e5b48edf6c03c14ed33915994169a",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4498cbb7_624fdad3",
+        "filename": "setup.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 405
+      },
+      "writtenOn": "2021-09-23T10:35:32Z",
+      "side": 1,
+      "message": "0.1.0 following semver first version",
+      "range": {
+        "startLine": 26,
+        "startChar": 13,
+        "endLine": 26,
+        "endChar": 18
+      },
+      "revId": "137d26d31c5e5b48edf6c03c14ed33915994169a",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": true
+    }
+  ]
+}
