@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5f397c19_492a919d",
+        "filename": "Dockerfile",
+        "patchSetId": 8
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 29
+      },
+      "writtenOn": "2021-10-14T12:02:57Z",
+      "side": 1,
+      "message": "no i copy/paste 😄",
+      "parentUuid": "9a9501b9_53fecb76",
+      "range": {
+        "startLine": 11,
+        "startChar": 19,
+        "endLine": 11,
+        "endChar": 31
+      },
+      "revId": "3cbe9e9a8dd5efdd6fb90ec20069f2423dfb0cd5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fd1a72db_f9c43168",
         "filename": "Dockerfile",
         "patchSetId": 8
@@ -39,6 +63,24 @@
       "revId": "3cbe9e9a8dd5efdd6fb90ec20069f2423dfb0cd5",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ee6f058_0a809ce9",
+        "filename": "Dockerfile",
+        "patchSetId": 8
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 29
+      },
+      "writtenOn": "2021-10-14T12:02:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fd1a72db_f9c43168",
+      "revId": "3cbe9e9a8dd5efdd6fb90ec20069f2423dfb0cd5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     },
     {
       "key": {
@@ -62,6 +104,30 @@
       "revId": "3cbe9e9a8dd5efdd6fb90ec20069f2423dfb0cd5",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f17ebf49_ad99c73a",
+        "filename": "dci_analytics/config.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 29
+      },
+      "writtenOn": "2021-10-14T12:02:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "004beb06_84644a29",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 31,
+        "endChar": 22
+      },
+      "revId": "3cbe9e9a8dd5efdd6fb90ec20069f2423dfb0cd5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "5bc5d37f_df9c06e1",
+        "filename": "dci_analytics/engine/elasticsearch.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 29
+      },
+      "writtenOn": "2021-10-14T12:02:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "214e1e7d_83b6018a",
+      "range": {
+        "startLine": 27,
+        "startChar": 8,
+        "endLine": 27,
+        "endChar": 13
+      },
+      "revId": "3cbe9e9a8dd5efdd6fb90ec20069f2423dfb0cd5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "001b8cb8_b62485e9",
         "filename": "dci_analytics/engine/synchronization.py",
         "patchSetId": 8
@@ -131,6 +221,30 @@
       "revId": "3cbe9e9a8dd5efdd6fb90ec20069f2423dfb0cd5",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82a1cf2d_103ca7c3",
+        "filename": "dci_analytics/engine/synchronization.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 29
+      },
+      "writtenOn": "2021-10-14T12:02:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "001b8cb8_b62485e9",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 34,
+        "endChar": 27
+      },
+      "revId": "3cbe9e9a8dd5efdd6fb90ec20069f2423dfb0cd5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     }
   ]
 }
