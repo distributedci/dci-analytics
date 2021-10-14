@@ -88,6 +88,29 @@
     },
     {
       "key": {
+        "uuid": "c5923b72_1238cad9",
+        "filename": "dci_analytics/engine/elasticsearch.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 405
+      },
+      "writtenOn": "2021-10-14T11:55:24Z",
+      "side": 1,
+      "message": "better to use logger sorry",
+      "range": {
+        "startLine": 27,
+        "startChar": 8,
+        "endLine": 27,
+        "endChar": 13
+      },
+      "revId": "3cbe9e9a8dd5efdd6fb90ec20069f2423dfb0cd5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "001b8cb8_b62485e9",
         "filename": "dci_analytics/engine/synchronization.py",
         "patchSetId": 8
