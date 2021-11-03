@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6d08cc92_e0ff5d45",
+        "filename": "dci-analytics.spec",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 405
+      },
+      "writtenOn": "2021-11-03T13:25:33Z",
+      "side": 1,
+      "message": "py3_build no ?",
+      "range": {
+        "startLine": 23,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 12
+      },
+      "revId": "4e2e0684f4ac8fddb9be493c8fd60d2bba5c23c1",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70426abe_82571850",
+        "filename": "dci-analytics.spec",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 405
+      },
+      "writtenOn": "2021-11-03T13:25:33Z",
+      "side": 1,
+      "message": "missing py3_install",
+      "range": {
+        "startLine": 25,
+        "startChar": 1,
+        "endLine": 25,
+        "endChar": 8
+      },
+      "revId": "4e2e0684f4ac8fddb9be493c8fd60d2bba5c23c1",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": true
+    }
+  ]
+}
