@@ -80,7 +80,7 @@ def get_table_columns_names(db_conn, table_name):
             sys.exit(1)
 
 
-def get_jobs(db_conn):
+def get_jobs_from_interval(db_conn, last_minutes=120):
     jobs_columns_names = get_table_columns_names(db_conn, "jobs")
     jobs_aliases = ["jobs.%s as jobs_%s" % (n, n) for n in jobs_columns_names]
     jobstates_columns_names = get_table_columns_names(db_conn, "jobstates")
@@ -89,11 +89,18 @@ def get_jobs(db_conn):
     ]
     files_columns_names = get_table_columns_names(db_conn, "files")
     files_aliases = ["files.%s as files_%s" % (n, n) for n in files_columns_names]
-    query = "SELECT %s, %s, %s from JOBS INNER JOIN JOBSTATES on (JOBSTATES.job_id = JOBS.id) INNER JOIN FILES on (FILES.jobstate_id = JOBSTATES.id) WHERE (JOBS.created_at > (current_timestamp - make_interval(mins => 120)) AND JOBS.status IN ('success', 'failure')) ORDER BY JOBSTATES.created_at ASC;"
+    query = """
+    SELECT %s, %s, %s
+    FROM JOBS
+    INNER JOIN JOBSTATES on (JOBSTATES.job_id = JOBS.id)
+    INNER JOIN FILES on (FILES.jobstate_id = JOBSTATES.id)
+    WHERE (JOBS.created_at > (current_timestamp - make_interval(mins => %s)) AND JOBS.status IN ('success', 'failure'))
+    ORDER BY JOBSTATES.created_at ASC"""
     query = query % (
         ", ".join(jobs_aliases),
         ", ".join(jobstates_aliases),
         ", ".join(files_aliases),
+        last_minutes
     )
     with db_conn.cursor(cursor_factory=pg_extras.DictCursor) as cursor:
         try:
@@ -107,7 +114,57 @@ def get_jobs(db_conn):
 
 def synchronize(_lock_synchronization):
     db_connection = get_db_connection()
-    jobs = get_jobs(db_connection)
+    jobs = get_jobs_from_interval(db_connection)
+
+    for job in jobs:
+        logger.info("process job %s" % job["id"])
+        task_duration_cumulated.process(job)
+
+    _lock_synchronization.release()
+
+
+def get_all_jobs(db_conn, last_minutes=120):
+    jobs_columns_names = get_table_columns_names(db_conn, "jobs")
+    jobs_aliases = ["jobs.%s as jobs_%s" % (n, n) for n in jobs_columns_names]
+    jobstates_columns_names = get_table_columns_names(db_conn, "jobstates")
+    jobstates_aliases = [
+        "jobstates.%s as jobstates_%s" % (n, n) for n in jobstates_columns_names
+    ]
+    files_columns_names = get_table_columns_names(db_conn, "files")
+    files_aliases = ["files.%s as files_%s" % (n, n) for n in files_columns_names]
+
+    while True:
+        limit = 1000
+        offset = 0
+        with db_conn.cursor(cursor_factory=pg_extras.DictCursor) as cursor:
+            query = """
+            SELECT {jobs_aliases}, {jobstates_aliases}, {files_aliases}
+            FROM JOBS
+            INNER JOIN JOBSTATES on (JOBSTATES.job_id = JOBS.id)
+            INNER JOIN FILES on (FILES.jobstate_id = JOBSTATES.id)
+            WHERE JOBS.status IN ('success', 'failure'))
+            ORDER BY JOBSTATES.created_at ASC
+            LIMIT {limit}
+            OFFSET {offset}""".format(
+                jobs_aliases=jobs_aliases,
+                jobstates_aliases=jobstates_aliases,
+                files_aliases=files_aliases,
+                limit=limit,
+                offset=offset
+            )
+            try:
+                cursor.execute(query)
+                jobs = [dict(j) for j in cursor.fetchall()]
+                if not jobs:
+                    raise StopIteration
+                yield format(jobs)
+            except Exception as err:
+                print("psycopg2 error: %s" % str(err))
+                sys.exit(1)
+
+def full_synchronize(_lock_synchronization):
+    db_connection = get_db_connection()
+    jobs = get_all_jobs(db_connection)
 
     for job in jobs:
         logger.info("process job %s" % job["id"])
