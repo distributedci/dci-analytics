@@ -52,6 +52,15 @@ def get(index, doc_id):
         return None
 
 
+def search(index, query):
+    # query = "q=topic_id:%s AND remoteci_id:%s" % (args["topic_id"], args["remoteci_id"])
+
+    res = requests.get("%s/%s/_search?%s" % (_ES_URL, index, query))
+    if res.status_code == 404:
+        return []
+    return res.json()["hits"]["hits"]
+
+
 def update(index, data, doc_id):
     url = "%s/%s/_update/%s" % (_ES_URL, index, doc_id)
     logger.debug(f"url: {url}")
