@@ -18,6 +18,7 @@
 import logging
 
 import requests
+import sys
 
 from dci_analytics import config
 
@@ -31,7 +32,7 @@ def push(index, data, doc_id):
     logger.debug(f"url: {url}")
     res = requests.post(url, json=data)
     if res.status_code != 201:
-        logger.error(
+        logger.debug(
             "error while pushing data to elastic index %s: %s" % (index, res.text)
         )
 
