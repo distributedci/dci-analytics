@@ -1,4 +1,4 @@
-FROM centos:8
+FROM quay.io/centos/centos:stream8
 
 LABEL name="DCI Analytics" version="0.0.1"
 LABEL maintainer="DCI Team <distributed-ci@redhat.com>"

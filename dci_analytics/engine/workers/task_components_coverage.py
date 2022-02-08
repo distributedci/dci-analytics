@@ -16,29 +16,37 @@
 # under the License.
 
 import logging
+import sys
 import uuid
 
 from dci_analytics.engine import elasticsearch as es
+from dci_analytics.engine import dci_utils as d_u
 
 
 logger = logging.getLogger(__name__)
+formatter = logging.Formatter("%(levelname)s - %(message)s")
+streamhandler = logging.StreamHandler(stream=sys.stdout)
+streamhandler.setFormatter(formatter)
+logger.addHandler(streamhandler)
+logger.setLevel(logging.DEBUG)
 
 
-def format_component_coverage(job, component, team_id):
+def format_component_coverage(component, team_id, job=None):
     res = {
         "component_id": component["id"],
         "component_name": component["name"],
-        "product_id": job["product_id"],
-        "topic_id": job["topic_id"],
+        "product_id": component["product_id"],
+        "topic_id": component["topic_id"],
         "tags": component["tags"],
         "team_id": team_id,
         "success_jobs": [],
         "failed_jobs": [],
     }
-    if job["status"] == "success":
-        res["success_jobs"] = [{"id": job["id"], "created_at": job["created_at"]}]
-    else:
-        res["failed_jobs"] = [{"id": job["id"], "created_at": job["created_at"]}]
+    if job is not None:
+        if job["status"] == "success":
+            res["success_jobs"] = [{"id": job["id"], "created_at": job["created_at"]}]
+        else:
+            res["failed_jobs"] = [{"id": job["id"], "created_at": job["created_at"]}]
     return res
 
 
@@ -64,10 +72,13 @@ def update_component_coverage(job, component_coverage):
 def process(job):
     if "components" not in job:
         return
-    components = job["components"]
-    for c in components:
+    components = dict()
+    job_components = job["components"]
+    for c in job_components:
+        c["product_id"] = job["product_id"]
+        components[c["id"]] = c
         for team in (job["team_id"], "red_hat"):
-            f_c = format_component_coverage(job, c, team)
+            f_c = format_component_coverage(c, team, job)
             row = es.search(
                 "tasks_components_coverage",
                 "q=component_id:%s AND team_id:%s" % (f_c["component_id"], team),
@@ -79,3 +90,82 @@ def process(job):
                 do_update, data = update_component_coverage(job, row["_source"])
                 if do_update:
                     es.update("tasks_components_coverage", data, row["_id"])
+    return components
+
+
+def synchronize(_lock_synchronization):
+    db_connection = d_u.get_db_connection()
+    limit = 100
+    offset = 0
+    all_components = dict()
+    components_processed_ids = set()
+    components_processed = dict()
+
+    # get all components within the timeframe
+    while True:
+        components = d_u.get_components(
+            db_connection, offset, limit, unit="hours", amount=2
+        )
+        if not components:
+            break
+        for c in components:
+            all_components[c["id"]] = c
+        offset += limit
+
+    logger.debug("mdr %s" % components)
+    # process all the jobs within the same timeframe
+    offset = 0
+    while True:
+        jobs = d_u.get_jobs(db_connection, offset, limit, unit="hours", amount=2)
+        if not jobs:
+            break
+        for job in jobs:
+            logger.info("process job %s" % job["id"])
+            current_components_processed = process(job)
+            components_processed.update(current_components_processed)
+        offset += limit
+
+    # if a component is not in the component_processsed_ids set
+    # it means it has not been tested yet
+    # action: push it on elasticsearch without jobs
+    components_processed_ids = set(components_processed.keys())
+    for a_c in all_components:
+        if a_c["id"] not in components_processed_ids:
+            if a_c["team_id"]:
+                f_c = format_component_coverage(a_c, a_c["team_id"])
+            else:
+                f_c = format_component_coverage(a_c, "red_hat")
+            es.push("task_components_coverage", f_c, str(uuid.uuid4()))
+
+    db_connection.close()
+    _lock_synchronization.release()
+
+
+def full_synchronize(_lock_synchronization):
+    db_connection = d_u.get_db_connection()
+    limit = 100
+    offset = 0
+    all_components = dict()
+
+    while True:
+        components = d_u.get_components(
+            db_connection, offset, limit, unit="months", amount=6
+        )
+        if not components:
+            break
+        for c in components:
+            all_components[c["id"]] = c
+        offset += limit
+
+    offset = 0
+    while True:
+        jobs = d_u.get_jobs(db_connection, offset, limit, unit="months", amount=6)
+        if not jobs:
+            break
+        for job in jobs:
+            logger.info("process job %s" % job["id"])
+            process(job, all_components)
+        offset += limit
+
+    db_connection.close()
+    _lock_synchronization.release()
