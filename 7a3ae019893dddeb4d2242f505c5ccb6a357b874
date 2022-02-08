@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c60afd4e_67c862be",
+        "filename": "dci_analytics/engine/workers/task_components_coverage.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 405
+      },
+      "writtenOn": "2022-02-08T12:10:18Z",
+      "side": 1,
+      "message": "not the good signature",
+      "range": {
+        "startLine": 167,
+        "startChar": 12,
+        "endLine": 167,
+        "endChar": 40
+      },
+      "revId": "7a3ae019893dddeb4d2242f505c5ccb6a357b874",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0"
+    }
+  ]
+}
