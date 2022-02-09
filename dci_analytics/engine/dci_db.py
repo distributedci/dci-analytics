@@ -20,7 +20,8 @@ import sys
 
 import psycopg2
 from psycopg2 import extras as pg_extras
-
+import sqlalchemy
+from sqlalchemy.orm import sessionmaker
 
 from dci_analytics import config
 from dci_analytics.engine.workers import tasks_duration_cumulated
@@ -84,14 +85,25 @@ def _format_jobs(jobs):
     return list(res.values())
 
 
-def get_db_connection():
-    return psycopg2.connect(
-        user=_CONFIG.get("POSTGRESQL_USER"),
-        password=_CONFIG.get("POSTGRESQL_PASSWORD"),
-        host=_CONFIG.get("POSTGRESQL_HOST"),
-        port=_CONFIG.get("POSTGRESQL_PORT"),
-        database=_CONFIG.get("POSTGRESQL_DATABASE"),
+def get_session_db():
+    uri = "postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}".format(
+        db_user=_CONFIG.get("POSTGRESQL_USER"),
+        db_password=_CONFIG.get("POSTGRESQL_PASSWORD"),
+        db_host=_CONFIG.get("POSTGRESQL_HOST"),
+        db_port=_CONFIG.get("POSTGRESQL_PORT"),
+        db_name=_CONFIG.get("POSTGRESQL_DATABASE"),
     )
+
+    return sessionmaker(
+        bind=sqlalchemy.create_engine(
+            uri,
+            pool_size=5,
+            max_overflow=25,
+            encoding="utf8",
+            convert_unicode=True,
+            echo=False,
+        )
+    )()
 
 
 def _get_table_columns_names(db_conn, table_name):
