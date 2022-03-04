@@ -84,23 +84,21 @@ def lock_and_run(lock, func):
         )
 
 
-@app.route("/tasks_duration_cumulated/sync", strict_slashes=False, methods=["POST"])
+@app.route("/task_duration_cumulated/sync", strict_slashes=False, methods=["POST"])
 def tasks_duration_cumulated_sync():
     return lock_and_run(
         _LOCK_TASK_DURATION_CUMULATED, tasks_duration_cumulated.synchronize
     )
 
 
-@app.route(
-    "/tasks_duration_cumulated/full_sync", strict_slashes=False, methods=["POST"]
-)
+@app.route("/task_duration_cumulated/full_sync", strict_slashes=False, methods=["POST"])
 def tasks_duration_cumulated_full_sync():
     return lock_and_run(
         _LOCK_TASK_DURATION_CUMULATED, tasks_duration_cumulated.full_synchronize
     )
 
 
-@app.route("/tasks_components_coverage/sync", strict_slashes=False, methods=["POST"])
+@app.route("/task_components_coverage/sync", strict_slashes=False, methods=["POST"])
 def tasks_components_coverage_sync():
     return lock_and_run(
         _LOCK_TASK_COMPONENTS_COVERAGE, tasks_components_coverage.synchronize
@@ -108,7 +106,7 @@ def tasks_components_coverage_sync():
 
 
 @app.route(
-    "/tasks_components_coverage/full_sync", strict_slashes=False, methods=["POST"]
+    "/task_components_coverage/full_sync", strict_slashes=False, methods=["POST"]
 )
 def tasks_components_coverage_full_sync():
     return lock_and_run(
@@ -116,11 +114,11 @@ def tasks_components_coverage_full_sync():
     )
 
 
-@app.route("/tasks_junit/sync", strict_slashes=False, methods=["POST"])
+@app.route("/task_junit/sync", strict_slashes=False, methods=["POST"])
 def tasks_junit_sync():
     return lock_and_run(_LOCK_TASK_JUNIT, tasks_junit.synchronize)
 
 
-@app.route("/tasks_junit/full_sync", strict_slashes=False, methods=["POST"])
+@app.route("/task_junit/full_sync", strict_slashes=False, methods=["POST"])
 def tasks_junit_full_sync():
     return lock_and_run(_LOCK_TASK_JUNIT, tasks_junit.full_synchronize)
