@@ -28,6 +28,7 @@ from dciclient.v1.api import context
 from dciclient.v1.api import file as dci_file
 
 import logging
+import pandas as pd
 
 
 logger = logging.getLogger(__name__)
@@ -119,3 +120,74 @@ def synchronize(_lock_synchronization):
 def full_synchronize(_lock_synchronization):
     _sync("weeks", 24)
     _lock_synchronization.release()
+
+
+def get_jobs_in_timeframe(topic_name, start_date, end_date, tags):
+    pass
+
+
+def filter_jobs(jobs, file_test_name):
+    """keep only the job information with the junit content according to the file testname"""
+    res = []
+    for j in jobs:
+        for f in jobs["files"]:
+            if f["name"] == file_test_name:
+                j["junit_content"] = f["junit_content"]
+                res.append(j)
+                break
+        j["files"] = None
+    return res
+
+
+def get_jobs_dataset(topic_name, start_date, end_date, tags, test_name):
+
+    jobs = get_jobs_in_timeframe(topic_name, start_date, end_date, tags)
+    jobs = filter_jobs(jobs, test_name)
+
+    jobs_ids_dates = []
+
+    jobs_dataframes = []
+    for j in jobs:
+        df = pd.DataFrame(j["junit_content"], index=[j["id"]])
+        jobs_dataframes.append(df)
+        jobs_ids_dates.append(
+            {
+                "date": j["created_at"],
+                "id": j["id"],
+            }
+        )
+
+    return pd.concat(jobs_dataframes), jobs_ids_dates
+
+
+def topics_mean_comparison(
+    topic_name_1,
+    topic_1_start_date,
+    topic_1_end_date,
+    topic_1_tags,
+    topic_name_2,
+    topic_2_start_date,
+    topic_2_end_date,
+    topic_2_tags,
+):
+    # compute topic_1's mean to have a baseline
+    logger.info(
+        "compare the jobs mean of topic %s with jobs of topic %s..."
+        % (topic_name_1, topic_name_2)
+    )
+    topic_1_jobs, _ = get_jobs_dataset(
+        topic_name_1, topic_1_start_date, topic_1_end_date, topic_1_tags
+    )
+    topic_1_jobs_mean = topic_1_jobs.mean()
+
+    topic_2_jobs, jobs_ids_dates = get_jobs_dataset(
+        topic_name_2, topic_2_start_date, topic_2_end_date, topic_2_tags
+    )
+
+    def delta_mean(lign):
+        if lign.name not in topic_1_jobs.index.values:
+            return "N/A"
+        diff = lign - topic_1_jobs_mean[lign.name]
+        return (diff * 100.0) / topic_1_jobs_mean[lign.name]
+
+    return topic_2_jobs.apply(delta_mean, axis=1), jobs_ids_dates

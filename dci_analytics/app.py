@@ -124,3 +124,30 @@ def tasks_junit_sync():
 @app.route("/tasks_junit/full_sync", strict_slashes=False, methods=["POST"])
 def tasks_junit_full_sync():
     return lock_and_run(_LOCK_TASK_JUNIT, tasks_junit.full_synchronize)
+
+
+@app.route("/junit_topics_comparison", strict_slashes=False, methods=["POST"])
+def junit_topics_comparison():
+    topic_name_1 = flask.request.json["topic_name_1"]
+    topic_1_start_date = flask.request.json["topic_1_start_date"]
+    topic_1_end_date = flask.request.json["topic_1_end_date"]
+    topic_1_tags = flask.request.json["topic_1_tags"]
+    topic_name_2 = flask.request.json["topic_name_2"]
+    topic_2_start_date = flask.request.json["topic_2_start_date"]
+    topic_2_end_date = flask.request.json["topic_2_end_date"]
+    topic_2_tags = flask.request.json["topic_2_tags"]
+    comparison = tasks_junit.topics_mean_comparison(
+        topic_name_1,
+        topic_1_start_date,
+        topic_1_end_date,
+        topic_1_tags,
+        topic_name_2,
+        topic_2_start_date,
+        topic_2_end_date,
+        topic_2_tags,
+    )
+    return flask.Response(
+        json.dumps(comparison),
+        status=201,
+        content_type="application/json",
+    )
