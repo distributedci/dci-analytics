@@ -24,6 +24,7 @@ from dci_analytics.engine import exceptions
 from dci_analytics.engine.workers import tasks_duration_cumulated
 from dci_analytics.engine.workers import tasks_components_coverage
 from dci_analytics.engine.workers import tasks_junit
+from dci_analytics.engine.workers import tasks_telco
 
 
 app = flask.Flask(__name__)
@@ -135,6 +136,17 @@ def tasks_junit_sync():
 def tasks_junit_full_sync():
     logger.info("running full synchronization")
     return lock_and_run(_LOCK_TASK_JUNIT, tasks_junit.full_synchronize)
+
+
+@app.route("/tasks_telco/sync", strict_slashes=False, methods=["POST"])
+def tasks_telco_sync():
+    return lock_and_run(_LOCK_TASK_JUNIT, tasks_telco.synchronize)
+
+
+@app.route("/tasks_telco/full_sync", strict_slashes=False, methods=["POST"])
+def tasks_telco_full_sync():
+    logger.info("running full synchronization")
+    return lock_and_run(_LOCK_TASK_JUNIT, tasks_telco.full_synchronize)
 
 
 @app.route("/junit_topics_comparison", strict_slashes=False, methods=["POST"])
