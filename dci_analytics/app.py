@@ -329,6 +329,9 @@ def pipelines_status():
         )
         pipelines[job["pipeline"]["id"]]["jobs"].append(job)
 
+    for _, p in pipelines.items():
+        p["tests"] = tasks_pipeline.format_tests(p["jobs"])
+
     days = {}
     for _, p in pipelines.items():
         if p["created_at"] not in days:
