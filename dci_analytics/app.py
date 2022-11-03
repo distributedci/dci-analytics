@@ -244,6 +244,7 @@ def pipelines_status():
     end_date = flask.request.json["end_date"]
     pipelines_names = flask.request.json.get("pipelines_names", [])
     teams_ids = flask.request.json.get("teams_ids", [])
+    components_types = flask.requests.json.get("components_types", [])
     size = 10
     body = {
         "query": {
@@ -327,12 +328,13 @@ def pipelines_status():
         job["components"] = tasks_pipeline.sort_components(
             components_headers, job["components"]
         )
-        pipelines[job["pipeline"]["id"]]["jobs"].append(job)
+        job["components"] = tasks_pipeline.filter_components(
+            job["components"], components_types
+        )
+        job["tests"] = tasks_pipeline.format_tests(job)
+        job.pop("results")
 
-    for _, p in pipelines.items():
-        for j in p["jobs"]:
-            j["tests"] = tasks_pipeline.format_tests(j)
-            j.pop("results")
+        pipelines[job["pipeline"]["id"]]["jobs"].append(job)
 
     days = {}
     for _, p in pipelines.items():
