@@ -244,7 +244,6 @@ def pipelines_status():
     end_date = flask.request.json["end_date"]
     pipelines_names = flask.request.json.get("pipelines_names", [])
     teams_ids = flask.request.json.get("teams_ids", [])
-    components_types = flask.request.json.get("components_types", [])
     size = 10
     body = {
         "query": {
@@ -299,12 +298,10 @@ def pipelines_status():
             jobs.append(j["_source"])
         body["from"] += size
 
-    def _get_components_headers(jobs, components_types):
+    def _get_components_headers(jobs):
         headers = []
         for j in jobs:
             for c in j["components"]:
-                if components_types and c["type"] not in components_types:
-                    continue
                 cpn = c["canonical_project_name"]
                 if " " in cpn:
                     cpn = c["canonical_project_name"].split(" ")[0]
@@ -314,7 +311,7 @@ def pipelines_status():
                     headers.append(cpn)
         return sorted(headers)
 
-    components_headers = _get_components_headers(jobs, components_types)
+    components_headers = _get_components_headers(jobs)
     pipelines = {}
     for job in jobs:
         if job["pipeline"]["id"] not in pipelines:
@@ -327,16 +324,15 @@ def pipelines_status():
             job.pop("files")
         if "jobstates" in job:
             job.pop("jobstates")
-        job["components"] = tasks_pipeline.filter_components(
-            job["components"], components_types
-        )
         job["components"] = tasks_pipeline.sort_components(
             components_headers, job["components"]
         )
-        job["tests"] = tasks_pipeline.format_tests(job)
-        job.pop("results")
-
         pipelines[job["pipeline"]["id"]]["jobs"].append(job)
+
+    for _, p in pipelines.items():
+        for j in p["jobs"]:
+            j["tests"] = tasks_pipeline.format_tests(j)
+            j.pop("results")
 
     days = {}
     for _, p in pipelines.items():
