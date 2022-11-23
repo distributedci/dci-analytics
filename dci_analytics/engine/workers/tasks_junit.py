@@ -305,12 +305,12 @@ def topics_comparison(
 
     def delta(lign):
         if lign.name not in topic_1_jobs.columns.values:
-            return "N/A"
+            return 0
         try:
             diff = lign - topic_1_jobs_computed[lign.name]
             return (diff * 100.0) / topic_1_jobs_computed[lign.name]
         except Exception as e:
             logger.error("calculation error: %s" % str(e))
-            return "N/A"
+            return 0
 
     return topic_2_jobs.apply(delta, axis=1)
