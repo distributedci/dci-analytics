@@ -321,4 +321,4 @@ def topics_comparison(
         topic_2_jobs_computed = topic_2_jobs.iloc[-1:].T
 
     diff = topic_2_jobs_computed - topic_1_jobs_computed
-    return (diff * 100) / topic_1_jobs_computed
+    return ((diff * 100) / topic_1_jobs_computed).dropna()
