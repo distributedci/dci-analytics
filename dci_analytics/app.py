@@ -15,6 +15,7 @@
 # under the License.
 
 
+from datetime import date as dt
 import flask
 import json
 import logging
@@ -166,6 +167,24 @@ def junit_topics_comparison():
     remoteci_2_id = flask.request.json["remoteci_2_id"]
     topic_2_baseline_computation = flask.request.json["topic_2_baseline_computation"]
     tags_2 = flask.request.json["tags_2"]
+
+    tasks_junit.check_dates(
+        topic_1_start_date, topic_1_end_date, topic_2_start_date, topic_2_end_date
+    )
+
+    date_topic_1_start_date = dt.strptime(topic_1_start_date, "%Y-%m-%d")
+    date_topic_1_end_date = dt.strptime(topic_1_end_date, "%Y-%m-%d")
+    if date_topic_1_start_date > date_topic_1_end_date:
+        raise exceptions.DCIException(
+            "topic_1_end_date is anterior to topic_1_start_date"
+        )
+
+    date_topic_2_start_date = dt.strptime(topic_2_start_date, "%Y-%m-%d")
+    date_topic_2_end_date = dt.strptime(topic_2_end_date, "%Y-%m-%d")
+    if date_topic_2_start_date > date_topic_2_end_date:
+        raise exceptions.DCIException(
+            "topic_2_end_date is anterior to topic_2_start_date"
+        )
 
     comparison = tasks_junit.topics_comparison(
         topic_1_id,
