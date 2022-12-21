@@ -1,0 +1,8 @@
+Code-Review+2: Yassine Lamgarchal <yassine.lamgarchal@redhat.com>
+Workflow+1: Yassine Lamgarchal <yassine.lamgarchal@redhat.com>
+Verified+2: Zuul CI <zuul@softwarefactory-project.io>
+Submitted-by: Zuul CI <zuul@softwarefactory-project.io>
+Submitted-at: Wed, 21 Dec 2022 14:13:06 +0000
+Reviewed-on: https://softwarefactory-project.io/r/c/dci-analytics/+/27055
+Project: dci-analytics
+Branch: refs/heads/master
