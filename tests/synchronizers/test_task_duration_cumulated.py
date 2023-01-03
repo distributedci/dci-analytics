@@ -15,7 +15,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from dci_analytics.engine.workers import tasks_duration_cumulated
+from dci_analytics.synchronizers import tasks_duration_cumulated
 
 
 def test__get_tasks_duration_cumulated():

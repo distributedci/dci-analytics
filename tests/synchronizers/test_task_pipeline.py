@@ -15,7 +15,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from dci_analytics.engine.workers import tasks_pipeline
+from dci_analytics.synchronizers import tasks_pipeline
 
 
 def test_sort_components():
