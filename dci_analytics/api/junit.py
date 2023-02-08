@@ -100,18 +100,18 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
 
 
 def generate_bar_chart_data(tests):
-    index = [v for v in range(-100, 101, 10)]
-    res = [0] * 20
+    index = [v for v in range(-110, 110, 10)]
+    res = [0] * 22
     for _, v in tests.items():
         for i, vi in enumerate(index):
             if v < -100:
                 res[0] += 1
                 break
             elif v > 100:
-                res[19] += 1
+                res[21] += 1
                 break
-            elif v < vi + 5:
-                res[i] += 1
+            elif v < vi:
+                res[i - 1] += 1
                 break
     return res
 
