@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ec5f2d44_46ee9a1c",
+        "filename": "dci_analytics/api/junit.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1440
+      },
+      "writtenOn": "2023-02-08T15:48:42Z",
+      "side": 1,
+      "message": "don\u0027t use magic number here, just len(index)",
+      "range": {
+        "startLine": 104,
+        "startChar": 16,
+        "endLine": 104,
+        "endChar": 18
+      },
+      "revId": "4b3dd8c817b007d50e5a0b516a368221685e2286",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ce095151_5cb3e848",
+        "filename": "dci_analytics/api/junit.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1440
+      },
+      "writtenOn": "2023-02-08T15:48:42Z",
+      "side": 1,
+      "message": "same here it\u0027s always index[1] no ?",
+      "range": {
+        "startLine": 107,
+        "startChar": 20,
+        "endLine": 107,
+        "endChar": 23
+      },
+      "revId": "4b3dd8c817b007d50e5a0b516a368221685e2286",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c51b8b0c_848e009f",
+        "filename": "dci_analytics/api/junit.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1440
+      },
+      "writtenOn": "2023-02-08T15:48:42Z",
+      "side": 1,
+      "message": "same here index[len(index)-1]",
+      "range": {
+        "startLine": 110,
+        "startChar": 21,
+        "endLine": 110,
+        "endChar": 24
+      },
+      "revId": "4b3dd8c817b007d50e5a0b516a368221685e2286",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "adfbfbe6_7c918394",
+        "filename": "dci_analytics/api/junit.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1440
+      },
+      "writtenOn": "2023-02-08T15:48:42Z",
+      "side": 1,
+      "message": "res[len(res)-1]",
+      "range": {
+        "startLine": 111,
+        "startChar": 20,
+        "endLine": 111,
+        "endChar": 22
+      },
+      "revId": "4b3dd8c817b007d50e5a0b516a368221685e2286",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0"
+    }
+  ]
+}
