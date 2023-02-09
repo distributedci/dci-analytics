@@ -36,7 +36,11 @@ def filter_jobs(jobs, file_test_name):
     for j in jobs:
         j = j["_source"]
         for f in j["files"]:
-            if f["name"] == file_test_name:
+            _f_name = f["name"].strip().lower()
+            _f_test_name = file_test_name.strip().lower()
+            if _f_test_name.endswith("*"):
+                _f_test_name = _f_test_name[:-1]
+            if _f_name.startswith(_f_test_name):
                 j["junit_content"] = f["junit_content"]
                 res.append(
                     {
