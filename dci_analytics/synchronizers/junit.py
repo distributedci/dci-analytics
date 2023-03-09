@@ -71,6 +71,8 @@ def get_file_content(api_conn, f):
 def _process_sync(api_conn, job):
     files = []
     junit_found = False
+    if job["status"] != "success":
+        return
     for f in job["files"]:
         if f["state"] != "active":
             continue
@@ -112,9 +114,7 @@ def _sync(unit, amount):
     limit = 10
     offset = 0
     while True:
-        jobs = a_d_l.get_jobs(
-            session_db, offset, limit, unit=unit, amount=amount, status="success"
-        )
+        jobs = a_d_l.get_jobs(session_db, offset, limit, unit=unit, amount=amount)
         if not jobs:
             logger.info("no jobs to get from the api")
             break
