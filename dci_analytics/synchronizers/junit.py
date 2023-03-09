@@ -71,6 +71,8 @@ def get_file_content(api_conn, f):
 def _process_sync(api_conn, job):
     files = []
     junit_found = False
+    if job["status"] != "success":
+        return
     for f in job["files"]:
         if f["state"] != "active":
             continue
