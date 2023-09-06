@@ -1,11 +1,11 @@
 Name:             dci-analytics
 Version:          0.1.0
-Release:          1.VERS%{?dist}
+Release:          2.VERS%{?dist}
 Summary:          DCI Analytics engine
 License:          ASL 2.0
 URL:              https://github.com/redhat-cip/%{name}
 BuildArch:        noarch
-Source0:          %{name}-%{version}.tar.gz
+Source0:          %{name}-%{version}.postDATE.tar.gz
 
 BuildRequires:    systemd
 
@@ -15,7 +15,7 @@ Requires:         podman
 The DCI analytics engine
 
 %prep
-%autosetup -n %{name}-%{version}
+%autosetup -n %{name}-%{version}.postDATE
 
 %build
 
@@ -43,5 +43,8 @@ install -p -D -m 644 systemd/%{name}-sync.timer %{buildroot}%{_unitdir}/%{name}-
 %{_unitdir}/*
 
 %changelog
+* Wed Nov 15 2023 Haïkel Guémar <hguemar@redhat.com> - 0.1.0-2
+- use the new build process compatible with PEP-0440
+
 * Wed Oct 20 2021 Yassine Lamgarchal <ylamgarc@redhat.com> - 0.1.0-1
 - Initial release

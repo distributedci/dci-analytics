@@ -18,6 +18,22 @@
 import os
 import setuptools
 
+# dcibuild can be loaded only when doing the sdist sub-command because
+# dci-packaging is extracted at the same level. When doing the other
+# sub-commands like build, we extract the version from version.py.
+try:
+    from dcibuild import sdist, get_version
+
+    sdist.dci_mod = "dci_analytics"
+except:
+    sdist = None
+
+    def get_version():
+        from dci_analytics import version
+
+        return version.__version__
+
+
 root_dir = os.path.dirname(os.path.abspath(__file__))
 readme = open(os.path.join(root_dir, "README.md")).read()
 
@@ -40,4 +56,7 @@ setuptools.setup(
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
     ],
+    cmdclass={
+        "sdist": sdist,
+    },
 )
