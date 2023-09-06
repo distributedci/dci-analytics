@@ -23,7 +23,7 @@ readme = open(os.path.join(root_dir, "README.md")).read()
 
 setuptools.setup(
     name="dci-analytics",
-    version="0.1.0",
+    version="SEMVER",
     packages=setuptools.find_packages(exclude=("tests")),
     author="Distributed CI team",
     author_email="distributed-ci@redhat.com",
