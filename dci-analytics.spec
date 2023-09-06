@@ -1,11 +1,11 @@
 Name:             dci-analytics
-Version:          0.1.0
+Version:          SEMVER
 Release:          1.VERS%{?dist}
 Summary:          DCI Analytics engine
 License:          ASL 2.0
 URL:              https://github.com/redhat-cip/%{name}
 BuildArch:        noarch
-Source0:          %{name}-%{version}.tar.gz
+Source0:          %{name}-%{version}.dev0-VERS.tar.gz
 
 BuildRequires:    systemd
 
@@ -15,7 +15,7 @@ Requires:         podman
 The DCI analytics engine
 
 %prep
-%autosetup -n %{name}-%{version}
+%autosetup -n %{name}-%{version}.dev0-VERS
 
 %build
 
