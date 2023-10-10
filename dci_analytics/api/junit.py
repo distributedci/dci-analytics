@@ -90,9 +90,9 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
         jobs = es.search_json("tasks_junit", body)
         if "hits" not in jobs:
             break
-        if "hits" not in jobs["hits"]:
+        if not jobs["hits"]:
             break
-        if not jobs:
+        if "hits" not in jobs["hits"]:
             break
         jobs = jobs["hits"]["hits"]
         jobs = filter_jobs(jobs, test_name)
@@ -164,9 +164,11 @@ def comparison_data(
             )
         )
     if topic_1_baseline_computation == "mean":
-        topic_1_jobs_computed = topic_1_jobs.mean()
+        # + 1 to avoid zero division
+        topic_1_jobs_computed = topic_1_jobs.mean() + 1
     elif topic_1_baseline_computation == "median":
-        topic_1_jobs_computed = topic_1_jobs.median()
+        # +1 to avoid zero division
+        topic_1_jobs_computed = topic_1_jobs.median() + 1
     else:
         # use only the latest job results
         topic_1_jobs_computed = topic_1_jobs.iloc[-1].T
