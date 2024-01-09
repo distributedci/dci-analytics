@@ -6,7 +6,7 @@
 # not use this file except in compliance with the License. You may obtain
 # a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#      http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -15,26 +15,32 @@
 # under the License.
 
 import flask
-from flask import json
 
+import json
 import logging
+
+from dci_analytics.api import api
+from dci_analytics import elasticsearch as es
+
 
 logger = logging.getLogger(__name__)
 
-api = flask.Blueprint("api", __name__)
 
+@api.route("/jobs", strict_slashes=False, methods=["POST"])
+def get_jobs():
+    values = flask.request.json
+    q = values["query"]
+    _jobs = es.search("jobs", q)
+    logger.info(_jobs)
+    if "hits" not in _jobs:
+        _jobs = []
+    elif "hits" not in _jobs["hits"]:
+        _jobs = []
+    elif not _jobs["hits"]["hits"]:
+        _jobs = []
 
-@api.route("/ok", strict_slashes=False)
-def index():
-    logger.info("analytics server is ok...")
     return flask.Response(
-        json.dumps({"_status": "OK", "message": "DCI Analytics"}),
+        json.dumps(_jobs),
         status=200,
         content_type="application/json",
     )
-
-
-import dci_analytics.api.junit  # noqa
-import dci_analytics.api.pipelines  # noqa
-import dci_analytics.api.synchronization  # noqa
-import dci_analytics.api.jobs  # noqa
