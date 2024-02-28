@@ -36,6 +36,16 @@ def push(index, data, doc_id):
         )
 
 
+def put(index, data, doc_id):
+    url = "%s/%s/_doc/%s" % (_ES_URL, index, doc_id)
+    logger.debug(f"url: {url}")
+    res = requests.put(url, json=data)
+    if res.status_code != 201:
+        logger.debug(
+            "error while pushing data to elastic index %s: %s" % (index, res.text)
+        )
+
+
 def get(index, doc_id):
     url = "%s/%s/_doc/%s" % (_ES_URL, index, doc_id)
     logger.debug(f"url: {url}")

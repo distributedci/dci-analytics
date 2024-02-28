@@ -37,6 +37,17 @@ def process(job):
     return job
 
 
+def init_index():
+    es.init_index(
+        "jobs",
+        json={
+            "properties": {
+                "team_id": {"type": "keyword"},
+            }
+        },
+    )
+
+
 def _sync(unit, amount):
     es.init_index(
         "jobs",
