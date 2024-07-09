@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream8
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 
 LABEL name="DCI Analytics" version="0.0.1"
 LABEL maintainer="DCI Team <distributed-ci@redhat.com>"
@@ -11,9 +11,9 @@ ADD . /opt/dci-analytics/
 WORKDIR /opt/dci-analytics
 
 COPY requirements.txt /tmp/requirements.txt
-RUN yum -y install git \
+RUN microdnf -y install git \
     python3-devel python3-pip python3-setuptools gcc && \
-    yum clean all && \
+    microdnf clean all && \
     pip3 install --no-cache-dir -U pip && \
     pip3 install --no-cache-dir -U tox && \
     pip3 install --no-cache-dir -r /tmp/requirements.txt && \
