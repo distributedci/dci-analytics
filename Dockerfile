@@ -13,6 +13,10 @@ WORKDIR /opt/dci-analytics
 RUN microdnf update && \
     microdnf -y install python3-pip python3-wheel git && \
     microdnf -y install python3-devel gcc-c++ gcc && \
+COPY requirements.txt /tmp/requirements.txt
+RUN microdnf -y install git \
+    python3-devel python3-pip python3-setuptools gcc && \
+    microdnf clean all && \
     pip3 install --no-cache-dir -U pip && \
     pip3 install --no-cache-dir -U tox && \
     pip3 install --no-cache-dir -r requirements.txt && \
