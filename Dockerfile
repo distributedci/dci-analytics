@@ -10,6 +10,7 @@ RUN mkdir /opt/dci-analytics
 COPY . /opt/dci-analytics/
 WORKDIR /opt/dci-analytics
 
+
 RUN microdnf update && \
     microdnf -y install python3-pip python3-wheel git && \
     microdnf -y install python3-devel gcc-c++ gcc && \
