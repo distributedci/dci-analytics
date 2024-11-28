@@ -17,6 +17,8 @@
 
 import logging
 
+import concurrent.futures
+
 from dci.analytics import access_data_layer as a_d_l
 from dci_analytics import elasticsearch as es
 from dci_analytics import dci_db
@@ -161,10 +163,13 @@ def get_tests(files, api_conn):
         if f["state"] != "active":
             continue
         if f["mime"] == "application/junit":
+            test = {"name": f["name"],
+                    "file_id": f["id"]}
             try:
                 file_content = get_file_content(api_conn, f)
                 file_descriptor = io.StringIO(file_content.decode("utf-8"))
-                tests.append(parse_junit(file_descriptor))
+                test["testsuites"] = parse_junit(file_descriptor)
+                tests.append(test)
             except Exception as e:
                 logger.error(f"Exception during sync: {e}")
     return tests
@@ -203,6 +208,7 @@ def _sync(unit, amount):
                     "remoteci": {"type": "nested"},
                     "keys_values": {"type": "nested"},
                     "tests": {"type": "nested"},
+                    "tests.testsuites": {"type": "nested"}
                 },
             }
         },
@@ -223,14 +229,18 @@ def _sync(unit, amount):
         jobs = a_d_l.get_jobs(session_db, offset, limit, unit=unit, amount=amount)
         if not jobs:
             break
-        for job in jobs:
-            try:
-                logger.info("process job %s" % job["id"])
-                process(job, api_conn)
-            except Exception as e:
-                logger.error(
-                    "error while processing job '%s': %s" % (job["id"], str(e))
-                )
+        futures = []
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for job in jobs:
+                try:
+                    logger.info("process job %s" % job["id"])
+                    futures.append(executor.submit(process, job=job, api_conn=api_conn))
+                except Exception as e:
+                    logger.error(
+                        "error while processing job '%s': %s" % (job["id"], str(e))
+                    )
+            for _ in futures.as_completed(futures):
+                pass
         offset += limit
     session_db.close()
 
