@@ -38,7 +38,7 @@ from datetime import timedelta
 logger = logging.getLogger(__name__)
 
 _INDEX = "jobs"
-_INDEX_JUNIT_CACHE = "_jobs_cache_junit"
+_INDEX_JUNIT_CACHE = "jobs_cache_junit"
 
 
 def parse_time(string_value):
@@ -146,8 +146,9 @@ def parse_junit(file_descriptor):
         raise parse_error
 
 
-def get_file_content(api_conn, f):
-    r = dci_file.content(api_conn, f["id"])
+def get_file_content(api_conn, f_id):
+    uri = "https://api.distributed-ci.io/api/v2/files/%s/content" % f_id
+    r = api_conn.session.get(uri)
     return r.content
 
 
@@ -159,7 +160,7 @@ def get_tests(files, api_conn):
         if f["mime"] == "application/junit":
             test = {"name": f["name"], "file_id": f["id"]}
             try:
-                file_content = get_file_content(api_conn, f)
+                file_content = get_file_content(api_conn, f["id"])
                 file_descriptor = io.StringIO(file_content.decode("utf-8"))
                 test["testsuites"] = parse_junit(file_descriptor)
                 tests.append(test)
@@ -246,7 +247,7 @@ def _sync(index, unit, amount):
             for job in jobs:
                 try:
                     logger.info("process job %s" % job["id"])
-                    futures.append(executor.submit(process, job=job, api_conn=api_conn))
+                    futures.append(executor.submit(process, index=index, job=job, api_conn=api_conn))
                 except Exception as e:
                     logger.error(
                         "error while processing job '%s': %s" % (job["id"], str(e))
