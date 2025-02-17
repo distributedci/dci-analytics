@@ -219,7 +219,12 @@ def _sync(index, unit, amount):
                     "keys_values": {"type": "nested"},
                     "tests": {
                         "type": "nested",
-                        "properties": {"testsuites": {"type": "nested"}},
+                        "properties": {
+                            "testsuites": {
+                                "type": "nested",
+                                "properties": {"testcases": {"type": "nested"}},
+                            }
+                        },
                     },
                 },
             }
@@ -272,6 +277,6 @@ def full(_lock_synchronization):
     new_index_name = es.generate_new_index_name(_INDEX)
     logger.debug(f"new index created: '{new_index_name}'")
     _sync(new_index_name, "weeks", 52)
-    new_alias = es.add_alias_to_index(new_index_name)
+    new_alias = es.add_alias_to_index("jobs", new_index_name)
     logger.debug(f"new alias '{new_alias}' added for index: '{new_index_name}'")
     _lock_synchronization.release()
