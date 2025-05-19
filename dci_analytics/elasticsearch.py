@@ -74,6 +74,29 @@ def update(index, data, doc_id):
         )
 
 
+def get_autocompletion_values(index, team_id, field, is_admin=False):
+    query = {
+        "aggs": {
+            "autocomplete": {
+                "terms": {
+                    "field": field,
+                    "size": 10
+                }
+            }
+        },
+        "size": 0
+    }
+    if not is_admin:
+        query["query"] = {
+            "term": {
+                "team_id": team_id
+            }
+        }
+
+    res = search_json(index, query)
+    return [f["key"] for f in res["aggregations"]["teams"]["buckets"]]
+
+
 def init_index(index, json=None):
     url = "%s/%s" % (_ES_URL, index)
     result = requests.get(url)
