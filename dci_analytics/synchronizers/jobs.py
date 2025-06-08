@@ -78,9 +78,7 @@ def parse_testcase(testcase_xml):
         if tag not in [
             "skipped",
             "error",
-            "failure",
-            "system-out",
-            "system-err",
+            "failure"
         ]:
             continue
         testcase["action"] = tag
@@ -290,7 +288,7 @@ def _sync(index, unit, amount):
         offset += limit
 
     if last_job:
-        es.update_index_meta(index, last_job_date=last_job["created_at"])
+        es.update_index_meta(index, last_job_date=last_job["updated_at"])
     session_db.close()
 
 
