@@ -66,9 +66,9 @@ if __name__ == '__main__':
     exchange = Exchange(exchange_name, type=exchange_type)
     queues = [Queue(queue_name, exchange, routing_key=routing_key)]
 
-    print("worker waiting for messages\n")
-    print("exchange: {exchange_name}, type: {exchange_type}\n")
-    print("queue: {queue_name}, routing_key: {routing_key}\n")
+    print("worker waiting for messages")
+    print(f"exchange: {exchange_name}, type: {exchange_type}")
+    print(f"queue: {queue_name}, routing_key: {routing_key}")
 
     with Connection(amqp_broker_url, heartbeat=4) as conn:
             worker = Worker(conn, queues)
