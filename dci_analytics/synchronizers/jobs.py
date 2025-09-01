@@ -227,7 +227,9 @@ def update_index(index):
                         "strings_as_keyword": {
                             "match_mapping_type": "string",
                             "mapping": {"type": "keyword"},
-                        },
+                        }
+                    },
+                    {
                         "extra_to_nested": {
                             "path_match": "extra.*",
                             "match_mapping_type": "object",
