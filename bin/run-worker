@@ -101,6 +101,6 @@ if __name__ == '__main__':
     logging.info(f"exchange: {exchange_name}, type: {exchange_type}")
     logging.info(f"queue: {queue_name}, routing_key: {routing_key}")
 
-    with Connection(AMQP_BROKER_URL, heartbeat=4) as conn:
+    with Connection(AMQP_BROKER_URL, heartbeat=60) as conn:
             worker = Worker(conn, queues)
             worker.run()
