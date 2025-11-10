@@ -228,9 +228,15 @@ def process(index, job, api_conn):
 
     doc = es.get(index, _id)
     if not doc:
-        es.push(index, job, _id)
+        res = es.push(index, job, _id)
+        if res.status_code == 400:
+            job["extra"] = []
+            es.push(index, job, _id)
     else:
-        es.update(index, job, _id)
+        res = es.update(index, job, _id)
+        if res.status_code == 400:
+            job["extra"] = []
+            es.update(index, job, _id)
     return job
 
 
