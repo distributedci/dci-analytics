@@ -308,7 +308,6 @@ def _sync(index, unit, amount):
     session_db = dci_db.get_session_db()
     limit = 100
     offset = 0
-    last_job = None
 
     if is_index_created:
         jobs = a_d_l.get_jobs(session_db, 0, 1, unit=unit, amount=amount)
@@ -319,7 +318,6 @@ def _sync(index, unit, amount):
         jobs = a_d_l.get_jobs(session_db, offset, limit, unit=unit, amount=amount)
         if not jobs:
             break
-        last_job = jobs[-1]
         futures = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
             for job in jobs:
@@ -337,9 +335,6 @@ def _sync(index, unit, amount):
             for _ in concurrent.futures.as_completed(futures):
                 pass
         offset += limit
-
-    if last_job:
-        es.update_index_meta(index, last_job_date=last_job["updated_at"])
     session_db.close()
 
 
