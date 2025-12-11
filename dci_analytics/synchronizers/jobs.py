@@ -262,6 +262,7 @@ def update_index(index):
                     "remoteci": {"type": "nested"},
                     "keys_values": {"type": "nested"},
                     "product": {"type": "nested"},
+                    "files": {"type": "nested"},
                     "tests": {
                         "type": "nested",
                         "properties": {
