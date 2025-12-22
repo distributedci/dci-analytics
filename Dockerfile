@@ -14,7 +14,7 @@ WORKDIR /opt/dci-analytics
 RUN microdnf update && \
   microdnf -y install python3-pip python3-wheel libpq git && \
   rpm -qa | sort > /tmp/rpms_before && \
-  microdnf -y install python3-devel make gcc gcc-c++ postgresql-devel diffutils findutils file && \
+  microdnf -y install python3-devel make gcc gcc-c++ postgresql-devel diffutils findutils file vi && \
   rpm -qa | sort > /tmp/rpms_after && \
   pip3 --no-cache-dir install --no-binary=psycopg2 -r requirements.txt && \
   comm -13 /tmp/rpms_before /tmp/rpms_after | xargs microdnf remove && \
