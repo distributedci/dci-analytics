@@ -24,6 +24,7 @@ from dci.analytics import access_data_layer as a_d_l
 from dci_analytics import elasticsearch as es
 from dci_analytics import dci_db
 from dci_analytics import config
+from dci_analytics.synchronizers import normalization_jobs_extra as nje
 
 
 from dciclient.v1.api import context
@@ -207,15 +208,15 @@ def parse_json(file_content):
 
 
 def get_extra_data(job, api_conn):
-    extra = []
+    extra = {}
     for f in job["files"]:
         if f["state"] != "active":
             continue
-        if f["mime"] == "application/dci-analytics+json":
+        if f["name"].startswith("dci-extra"):
             try:
                 file_content = get_file_content(api_conn, f["id"])
                 file_json = parse_json(file_content)
-                extra.append(file_json)
+                extra[f["name"]] = file_json
             except Exception as e:
                 logger.error(f"Exception during getting extra data: {e}")
     return extra
@@ -224,7 +225,12 @@ def get_extra_data(job, api_conn):
 def process(index, job, api_conn):
     _id = job["id"]
     job["tests"] = get_tests(job, api_conn)
-    job["extra"] = get_extra_data(job, api_conn)
+    _extra = get_extra_data(job, api_conn)
+    _normalized_extra = []
+    for filename, data in _extra.items():
+        _normalized = nje.normalize(filename, data)
+        _normalized_extra.append(_normalized)
+    job["extra"] = _normalized_extra
 
     doc = es.get(index, _id)
     if not doc:
@@ -272,7 +278,7 @@ def update_index(index):
                             }
                         },
                     },
-                    "extra": {"type": "nested"},
+                    "extra": {"type": "nested", "ignore_malformed": True},
                 },
             },
             "settings": {
