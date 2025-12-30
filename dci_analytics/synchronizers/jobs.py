@@ -24,7 +24,7 @@ from dci.analytics import access_data_layer as a_d_l
 from dci_analytics import elasticsearch as es
 from dci_analytics import dci_db
 from dci_analytics import config
-from dci_analytics.synchronizers import normalization_jobs_extra as nje
+from dci_analytics.synchronizers import normalization_jobs_extra_hardware as njeh
 
 
 from dciclient.v1.api import context
@@ -228,8 +228,15 @@ def process(index, job, api_conn):
     _extra = get_extra_data(job, api_conn)
     _normalized_extra = []
     for filename, data in _extra.items():
-        _normalized = nje.normalize(filename, data)
-        _normalized_extra.append(_normalized)
+        if filename.startswith("dci-extra.hardware"):
+            hardware = njeh.normalize(filename, data)
+            if isinstance(hardware, dict):
+                hardware["filename"] = filename
+            _normalized_extra.append(hardware)
+        else:
+            if isinstance(data, dict):
+                data["filename"] = filename
+            _normalized_extra.append(data)
     job["extra"] = _normalized_extra
 
     doc = es.get(index, _id)
@@ -278,7 +285,13 @@ def update_index(index):
                             }
                         },
                     },
-                    "extra": {"type": "nested", "ignore_malformed": True},
+                    "extra": {
+                        "type": "nested",
+                        "properties": {
+                            "hardware": {"type": "nested"},
+                            "kernel": {"type": "nested"},
+                        },
+                    },
                 },
             },
             "settings": {
