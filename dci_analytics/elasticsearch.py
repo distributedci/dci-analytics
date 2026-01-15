@@ -35,6 +35,7 @@ def push(index, data, doc_id):
         logger.debug(
             "error while pushing data to elastic index %s: %s" % (index, res.text)
         )
+    return res
 
 
 def get(index, doc_id):
@@ -72,6 +73,7 @@ def update(index, data, doc_id):
             "error while updating document %s to index %s: %s"
             % (doc_id, index, res.text)
         )
+    return res
 
 
 def get_autocompletion_values(index, team_id, field, is_admin=False, size=10):
