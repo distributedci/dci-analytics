@@ -566,6 +566,47 @@ class HardwareInfo:
 
         return interfaces
 
+    def _extract_pci_ids_from_hints(
+        self, node: Dict[str, Any]
+    ) -> Dict[str, Optional[str]]:
+        """
+        Extract PCI vendor/device IDs from hints dict.
+
+        Returns dict with keys: vendor_id, device_id, subvendor_id, subdevice_id
+        """
+        hints = node.get("hints", {})
+        result = {
+            "vendor_id": None,
+            "device_id": None,
+            "subvendor_id": None,
+            "subdevice_id": None,
+        }
+
+        if not isinstance(hints, dict):
+            return result
+
+        # Extract vendor/device IDs from hints
+        # Format: "pci.vendor": "0x8086", "pci.device": "0x1563"
+        pci_vendor = hints.get("pci.vendor")
+        pci_device = hints.get("pci.device")
+        pci_subvendor = hints.get("pci.subvendor")
+        pci_subdevice = hints.get("pci.subdevice")
+
+        if pci_vendor:
+            result["vendor_id"] = pci_vendor.replace("0x", "").replace("0X", "").upper()
+        if pci_device:
+            result["device_id"] = pci_device.replace("0x", "").replace("0X", "").upper()
+        if pci_subvendor:
+            result["subvendor_id"] = (
+                pci_subvendor.replace("0x", "").replace("0X", "").upper()
+            )
+        if pci_subdevice:
+            result["subdevice_id"] = (
+                pci_subdevice.replace("0x", "").replace("0X", "").upper()
+            )
+
+        return result
+
     def _parse_network_interface(self, node: Dict[str, Any]) -> Dict[str, Any]:
         """Parse a single network interface node."""
         description = node.get("description", "")
@@ -580,6 +621,19 @@ class HardwareInfo:
         # Use product vendor_id if vendor_id is None
         if vendor_id is None and prod_vendor_id is not None:
             vendor_id = prod_vendor_id
+
+        # Extract subsystem vendor and product (string names)
+        subvendor_str = node.get("subvendor")
+        subproduct_str = node.get("subproduct")
+
+        # Extract PCI IDs from hints (preferred source for numeric IDs)
+        pci_ids = self._extract_pci_ids_from_hints(node)
+
+        # Use hints IDs if available, otherwise keep parsed IDs from vendor/product strings
+        if pci_ids["vendor_id"]:
+            vendor_id = pci_ids["vendor_id"]
+        if pci_ids["device_id"]:
+            device_id = pci_ids["device_id"]
 
         # Get logical name (interface name)
         logical_name = node.get("logicalname")
@@ -666,6 +720,12 @@ class HardwareInfo:
                 # Strip 0x prefix if present
                 subdevice_id = sub_device.replace("0x", "").upper()
 
+        # Use hints subsystem IDs if available (preferred source)
+        if pci_ids["subvendor_id"]:
+            subvendor_id = pci_ids["subvendor_id"]
+        if pci_ids["subdevice_id"]:
+            subdevice_id = pci_ids["subdevice_id"]
+
         businfo = node.get("businfo", "")
 
         # Parse firmware string into structured components
@@ -680,7 +740,9 @@ class HardwareInfo:
             "vendor_id": vendor_id,
             "model": model,
             "device_id": device_id,
+            "subvendor": subvendor_str,
             "subvendor_id": subvendor_id,
+            "subproduct": subproduct_str,
             "subdevice_id": subdevice_id,
             "logical_name": logical_name,
             "link_status": link_status,
@@ -810,6 +872,19 @@ class HardwareInfo:
         if vendor_id is None and prod_vendor_id is not None:
             vendor_id = prod_vendor_id
 
+        # Extract subsystem vendor and product (string names)
+        subvendor_str = node.get("subvendor")
+        subproduct_str = node.get("subproduct")
+
+        # Extract PCI IDs from hints (preferred source for numeric IDs)
+        pci_ids = self._extract_pci_ids_from_hints(node)
+
+        # Use hints IDs if available, otherwise keep parsed IDs from vendor/product strings
+        if pci_ids["vendor_id"]:
+            vendor_id = pci_ids["vendor_id"]
+        if pci_ids["device_id"]:
+            device_id = pci_ids["device_id"]
+
         businfo = node.get("businfo", "")
         logical_name = node.get("logicalname")
 
@@ -829,6 +904,12 @@ class HardwareInfo:
                 # Strip 0x prefix if present
                 subdevice_id = sub_device.replace("0x", "").upper()
 
+        # Use hints subsystem IDs if available (preferred source)
+        if pci_ids["subvendor_id"]:
+            subvendor_id = pci_ids["subvendor_id"]
+        if pci_ids["subdevice_id"]:
+            subdevice_id = pci_ids["subdevice_id"]
+
         # Determine if this is a Virtual Function (SR-IOV VF) by checking PCI address
         is_vf = self._is_virtual_function(businfo)
 
@@ -838,7 +919,9 @@ class HardwareInfo:
             "vendor_id": vendor_id,
             "model": model,
             "device_id": device_id,
+            "subvendor": subvendor_str,
             "subvendor_id": subvendor_id,
+            "subproduct": subproduct_str,
             "subdevice_id": subdevice_id,
             "is_virtual_function": is_vf,
             "businfo": businfo,
