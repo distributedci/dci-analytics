@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) Red Hat, Inc
+# Copyright (C) 2024-2026 Red Hat, Inc
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -228,7 +228,7 @@ def process(index, job, api_conn):
     _extra = get_extra_data(job, api_conn)
     _normalized_extra = []
     for filename, data in _extra.items():
-        if filename.startswith("dci-extra.hardware"):
+        if filename.startswith("hardware"):
             hardware = njeh.normalize(filename, data)
             if isinstance(hardware, dict):
                 hardware["filename"] = filename
