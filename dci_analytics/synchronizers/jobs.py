@@ -207,38 +207,51 @@ def parse_json(file_content):
     return clean_doted_keys(json_content)
 
 
-def get_extra_data(job, api_conn):
-    extra = {}
+def get_nodes_data(job, api_conn):
+    nodes = {}
     for f in job["files"]:
         if f["state"] != "active":
             continue
-        if f["name"].startswith("dci-extra"):
+        if f["name"].startswith("hardware") or f["name"].startswith("dci-extra.kernel"):
             try:
                 file_content = get_file_content(api_conn, f["id"])
                 file_json = parse_json(file_content)
-                extra[f["name"]] = file_json
+                nodes[f["name"]] = file_json
             except Exception as e:
                 logger.error(f"Exception during getting extra data: {e}")
-    return extra
+    return nodes
 
 
 def process(index, job, api_conn):
-    _id = job["id"]
-    job["tests"] = get_tests(job, api_conn)
-    _extra = get_extra_data(job, api_conn)
-    _normalized_extra = []
-    for filename, data in _extra.items():
-        if filename.startswith("hardware"):
-            hardware = njeh.normalize(filename, data)
-            if isinstance(hardware, dict):
+    try:
+        _nodes_data = get_nodes_data(job, api_conn)
+        _map_node_to_data = {}
+        for filename, data in _nodes_data.items():
+            if filename.startswith("hardware"):
+                hardware = njeh.normalize(filename, data)
                 hardware["filename"] = filename
-            _normalized_extra.append(hardware)
-        else:
-            if isinstance(data, dict):
-                data["filename"] = filename
-            _normalized_extra.append(data)
-    job["extra"] = _normalized_extra
+                _node = hardware["node"]
+                if _node not in _map_node_to_data:
+                    _map_node_to_data[_node] = {"hardware": hardware}
+                else:
+                    _map_node_to_data[_node]["hardware"] = hardware
+            elif filename.startswith("dci-extra.kernel"):
+                if isinstance(data, dict):
+                    kernel = data
+                    kernel["filename"] = filename
+                    if "kernel" in kernel and "node" in kernel["kernel"]:
+                        _node = kernel["kernel"]["node"]
+                    if _node not in _map_node_to_data:
+                        _map_node_to_data[_node] = kernel
+                    else:
+                        _map_node_to_data[_node]["kernel"] = kernel["kernel"]
+    except Exception:
+        logger.exception(f"exeption during the process of job {job['id']}\n")
 
+    job["nodes"] = list(_map_node_to_data.values())
+    job["tests"] = get_tests(job, api_conn)
+
+    _id = job["id"]
     doc = es.get(index, _id)
     if not doc:
         es.push(index, job, _id)
@@ -285,7 +298,7 @@ def update_index(index):
                             }
                         },
                     },
-                    "extra": {
+                    "nodes": {
                         "type": "nested",
                         "properties": {
                             "hardware": {"type": "nested"},
