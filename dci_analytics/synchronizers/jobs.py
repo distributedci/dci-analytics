@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 
 _INDEX = "jobs"
 _INDEX_JUNIT_CACHE = "jobs_cache_junit"
+_INDEX_NODES_DATA_CACHE = "jobs_cache_nodes_data"
 
 
 def parse_time(string_value):
@@ -207,6 +208,13 @@ def parse_json(file_content):
     return clean_doted_keys(json_content)
 
 
+def get_nodes_data_from_cache(job_id):
+    doc = es.get(_INDEX_NODES_DATA_CACHE, job_id)
+    if doc:
+        return doc["nodes"]
+    return []
+
+
 def get_nodes_data(job, api_conn):
     nodes = {}
     for f in job["files"]:
@@ -224,31 +232,45 @@ def get_nodes_data(job, api_conn):
 
 def process(index, job, api_conn):
     try:
-        _nodes_data = get_nodes_data(job, api_conn)
-        _map_node_to_data = {}
-        for filename, data in _nodes_data.items():
-            if filename.startswith("hardware"):
-                hardware = njeh.normalize(filename, data)
-                hardware["filename"] = filename
-                _node = hardware["node"]
-                if _node not in _map_node_to_data:
-                    _map_node_to_data[_node] = {"hardware": hardware}
-                else:
-                    _map_node_to_data[_node]["hardware"] = hardware
-            elif filename.startswith("dci-extra.kernel"):
-                if isinstance(data, dict):
-                    kernel = data
-                    kernel["filename"] = filename
-                    if "kernel" in kernel and "node" in kernel["kernel"]:
-                        _node = kernel["kernel"]["node"]
+        nodes = get_nodes_data_from_cache(job["id"])
+        if not nodes:
+            _nodes_data = get_nodes_data(job, api_conn)
+            _map_node_to_data = {}
+            for filename, data in _nodes_data.items():
+                if filename.startswith("hardware"):
+                    hardware = njeh.normalize(filename, data)
+                    hardware["filename"] = filename
+                    _node = hardware["node"]
                     if _node not in _map_node_to_data:
-                        _map_node_to_data[_node] = kernel
+                        _map_node_to_data[_node] = {"hardware": hardware}
                     else:
-                        _map_node_to_data[_node]["kernel"] = kernel["kernel"]
+                        _map_node_to_data[_node]["hardware"] = hardware
+                elif filename.startswith("dci-extra.kernel"):
+                    if isinstance(data, dict):
+                        kernel = data
+                        kernel["filename"] = filename
+                        if "kernel" in kernel and "node" in kernel["kernel"]:
+                            _node = kernel["kernel"]["node"]
+                        if _node not in _map_node_to_data:
+                            _map_node_to_data[_node] = kernel
+                        else:
+                            _map_node_to_data[_node]["kernel"] = kernel["kernel"]
+            nodes = list(_map_node_to_data.values())
+            if nodes:
+                ret = es.push(
+                    _INDEX_NODES_DATA_CACHE,
+                    {"created_at": job["created_at"], "nodes": nodes},
+                    job["id"],
+                )
+                if ret.status_code != 201:
+                    logger.error(
+                        f"failed to push nodes data from job {job['id']}, ignoring the nodes field"
+                    )
+                    nodes = []
     except Exception:
-        logger.exception(f"exeption during the process of job {job['id']}\n")
+        logger.exception(f"exception during the process of job {job['id']}\n")
 
-    job["nodes"] = list(_map_node_to_data.values())
+    job["nodes"] = nodes
     job["tests"] = get_tests(job, api_conn)
 
     _id = job["id"]
