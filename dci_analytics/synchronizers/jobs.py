@@ -273,8 +273,8 @@ def update_index(index):
                         }
                     },
                     {
-                        "extra_to_nested": {
-                            "path_match": "extra.*",
+                        "nodes_to_nested": {
+                            "path_match": "nodes.*",
                             "match_mapping_type": "object",
                             "mapping": {"type": "nested"},
                         },
