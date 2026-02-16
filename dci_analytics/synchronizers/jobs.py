@@ -220,7 +220,7 @@ def get_nodes_data(job, api_conn):
     for f in job["files"]:
         if f["state"] != "active":
             continue
-        if f["name"].startswith("hardware") or f["name"].startswith("dci-extra.kernel"):
+        if f["name"].startswith("hardware") or f["name"].startswith("kernel"):
             try:
                 file_content = get_file_content(api_conn, f["id"])
                 file_json = parse_json(file_content)
@@ -245,7 +245,7 @@ def process(index, job, api_conn):
                         _map_node_to_data[_node] = {"hardware": hardware}
                     else:
                         _map_node_to_data[_node]["hardware"] = hardware
-                elif filename.startswith("dci-extra.kernel"):
+                elif filename.startswith("kernel"):
                     if isinstance(data, dict):
                         kernel = data
                         kernel["filename"] = filename
@@ -256,17 +256,16 @@ def process(index, job, api_conn):
                         else:
                             _map_node_to_data[_node]["kernel"] = kernel["kernel"]
             nodes = list(_map_node_to_data.values())
-            if nodes:
-                ret = es.push(
-                    _INDEX_NODES_DATA_CACHE,
-                    {"created_at": job["created_at"], "nodes": nodes},
-                    job["id"],
+            ret = es.push(
+                _INDEX_NODES_DATA_CACHE,
+                {"created_at": job["created_at"], "nodes": nodes},
+                job["id"],
+            )
+            if ret.status_code != 201:
+                logger.error(
+                    f"failed to push nodes data from job {job['id']}, ignoring the nodes field"
                 )
-                if ret.status_code != 201:
-                    logger.error(
-                        f"failed to push nodes data from job {job['id']}, ignoring the nodes field"
-                    )
-                    nodes = []
+                nodes = []
     except Exception:
         logger.exception(f"exception during the process of job {job['id']}\n")
 
