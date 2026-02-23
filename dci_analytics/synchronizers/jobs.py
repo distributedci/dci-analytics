@@ -230,7 +230,19 @@ def get_nodes_data(job, api_conn):
     return nodes
 
 
+def get_node_role(node):
+    if "master" in node:
+        return "director"
+    elif "sno" in node:
+        return "sno"
+    elif "worker" in node:
+        return "worker"
+    else:
+        return "n/a"
+
+
 def process(index, job, api_conn):
+    nodes = []
     try:
         nodes = get_nodes_data_from_cache(job["id"])
         if not nodes:
@@ -243,6 +255,8 @@ def process(index, job, api_conn):
                     _node = hardware["node"]
                     if _node not in _map_node_to_data:
                         _map_node_to_data[_node] = {"hardware": hardware}
+                        _map_node_to_data[_node]["node"] = _node
+                        _map_node_to_data[_node]["role"] = get_node_role(_node)
                     else:
                         _map_node_to_data[_node]["hardware"] = hardware
                 elif filename.startswith("kernel"):
@@ -251,10 +265,12 @@ def process(index, job, api_conn):
                         kernel["filename"] = filename
                         if "kernel" in kernel and "node" in kernel["kernel"]:
                             _node = kernel["kernel"]["node"]
-                        if _node not in _map_node_to_data:
-                            _map_node_to_data[_node] = kernel
-                        else:
-                            _map_node_to_data[_node]["kernel"] = kernel["kernel"]
+                            if _node not in _map_node_to_data:
+                                _map_node_to_data[_node] = kernel
+                                _map_node_to_data[_node]["node"] = _node
+                                _map_node_to_data[_node]["role"] = get_node_role(_node)
+                            else:
+                                _map_node_to_data[_node]["kernel"] = kernel["kernel"]
             nodes = list(_map_node_to_data.values())
             ret = es.push(
                 _INDEX_NODES_DATA_CACHE,
