@@ -265,6 +265,7 @@ def process(index, job, api_conn):
                         kernel["filename"] = filename
                         if "kernel" in kernel and "node" in kernel["kernel"]:
                             _node = kernel["kernel"]["node"]
+                            kernel["kernel"]["filename"] = filename
                             if _node not in _map_node_to_data:
                                 _map_node_to_data[_node] = kernel
                                 _map_node_to_data[_node]["node"] = _node
