@@ -277,9 +277,9 @@ def process(index, job, api_conn):
                 {"created_at": job["created_at"], "nodes": nodes},
                 job["id"],
             )
-            if ret.status_code != 201:
+            if ret.status_code == 400:
                 logger.error(
-                    f"failed to push nodes data from job {job['id']}, ignoring the nodes field"
+                    f"failed to push nodes data from job {job['id']}, malformed field, ignoring the nodes field"
                 )
                 nodes = []
     except Exception:
