@@ -224,7 +224,7 @@ def get_nodes_data(job, api_conn):
             try:
                 file_content = get_file_content(api_conn, f["id"])
                 file_json = parse_json(file_content)
-                nodes[f["name"]] = file_json
+                nodes[(f["name"], f["id"])] = file_json
             except Exception as e:
                 logger.error(f"Exception during getting extra data: {e}")
     return nodes
@@ -248,10 +248,16 @@ def process(index, job, api_conn):
         if not nodes:
             _nodes_data = get_nodes_data(job, api_conn)
             _map_node_to_data = {}
-            for filename, data in _nodes_data.items():
+            for (filename, file_id), data in _nodes_data.items():
                 if filename.startswith("hardware"):
                     hardware = njeh.normalize(filename, data)
                     hardware["filename"] = filename
+                    hardware["file_id"] = file_id
+                    if "error" in hardware:
+                        logger.error(
+                            f"error during normalization of hardware {filename}: {hardware['error']}"
+                        )
+                        continue
                     _node = hardware["node"]
                     if _node not in _map_node_to_data:
                         _map_node_to_data[_node] = {"hardware": hardware}
@@ -266,6 +272,7 @@ def process(index, job, api_conn):
                         if "kernel" in kernel and "node" in kernel["kernel"]:
                             _node = kernel["kernel"]["node"]
                             kernel["kernel"]["filename"] = filename
+                            kernel["kernel"]["file_id"] = file_id
                             if _node not in _map_node_to_data:
                                 _map_node_to_data[_node] = kernel
                                 _map_node_to_data[_node]["node"] = _node
