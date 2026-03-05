@@ -251,6 +251,8 @@ def process(index, job, api_conn):
             for (filename, file_id), data in _nodes_data.items():
                 if filename.startswith("hardware"):
                     hardware = njeh.normalize(filename, data)
+                    if not hardware:
+                        continue
                     hardware["filename"] = filename
                     hardware["file_id"] = file_id
                     if "error" in hardware:
@@ -416,17 +418,26 @@ def _sync(index, unit, amount):
     session_db.close()
 
 
-def sync_one_job(index, job):
+def sync_one_job(index, job_id):
+    session_db = None
+    try:
+        session_db = dci_db.get_session_db()
+        job = a_d_l.get_job_by_id(session_db, job_id)
+        is_index_created = update_index(index)
+        api_conn = _get_api_connection()
 
-    is_index_created = update_index(index)
-    api_conn = _get_api_connection()
+        if is_index_created:
+            es.update_index_meta(index, first_job_date=job["created_at"])
 
-    if is_index_created:
-        es.update_index_meta(index, first_job_date=job["created_at"])
+        process(index, job, api_conn)
 
-    process(index, job, api_conn)
-
-    es.update_index_meta(index, last_job_date=job["updated_at"])
+        es.update_index_meta(index, last_job_date=job["updated_at"])
+    except Exception as e:
+        logger.error(f"error while getting job by id {job_id}: {e}")
+        return
+    finally:
+        if session_db:
+            session_db.close()
 
 
 def partial(_lock_synchronization):
