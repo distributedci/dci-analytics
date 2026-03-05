@@ -16,6 +16,7 @@
 # under the License.
 
 
+from dci import dci_kombu
 from dci_analytics import elasticsearch as es
 from dci_analytics.synchronizers import jobs
 
@@ -59,27 +60,26 @@ def setup_logging():
 
 
 class Worker(ConsumerMixin):
-    def __init__(self, connection, queues):
+    def __init__(self, connection, queue_jobs_finished):
         self.connection = connection
-        self.queues = queues
+        self.queue_jobs_finished = queue_jobs_finished
 
     def get_consumers(self, Consumer, channel):
-        return [Consumer(queues=self.queues,
-                         callbacks=[self.on_message])]
+        return [Consumer(queues=self.queue_jobs_finished,
+                         callbacks=[self.on_job_finished])]
 
-    def on_message(self, body, message):
-        event = body["event"]
-        job_id = body["job"]["id"]
-        logging.info(f"Handle job event {event}: job_id {job_id}")
+    def on_job_finished(self, payload, message):
+        job_id = payload["job_id"]
+        logging.info(f"Handle job finished event: job_id {job_id}")
 
         latest_index_alias = es.get_latest_index_alias(_INDEX)
         logging.info(f"latest_index_alias: {latest_index_alias}")
         if latest_index_alias:
-             jobs.sync_one_job(latest_index_alias, body["job"])
+             jobs.sync_one_job(latest_index_alias, job_id)
         else:
              new_index_name = es.generate_new_index_name(_INDEX)
              logging.info(f"new index created: '{new_index_name}'")
-             jobs.sync_one_job(new_index_name, body["job"])
+             jobs.sync_one_job(new_index_name, job_id)
              new_alias = es.add_alias_to_index("jobs", new_index_name)
              logging.info(f"new alias '{new_alias}' added for index: '{new_index_name}'")
         message.ack()
@@ -88,19 +88,14 @@ class Worker(ConsumerMixin):
 if __name__ == '__main__':
 
     setup_logging()
-
-    exchange_name = "dci.analytics.exchange"
-    exchange_type = "direct"
-    queue_name = "dci.analytics.queue"
-    routing_key = "dci.analytics.jobs"
-
-    exchange = Exchange(exchange_name, type=exchange_type)
-    queues = [Queue(queue_name, exchange, routing_key=routing_key)]
+    
+    exchange = Exchange(dci_kombu.DCI_EXCHANGE, type="topic")
+    queue_jobs_finished = Queue(dci_kombu.QUEUE_JOBS_FINISHED, exchange, routing_key=dci_kombu.RK_JOBS_FINISHED)
 
     logging.info("worker waiting for messages")
-    logging.info(f"exchange: {exchange_name}, type: {exchange_type}")
-    logging.info(f"queue: {queue_name}, routing_key: {routing_key}")
+    logging.info(f"exchange: {dci_kombu.DCI_EXCHANGE}, type: topic")
+    logging.info(f"queue: {dci_kombu.QUEUE_JOBS_FINISHED}, routing_key: {dci_kombu.RK_JOBS_FINISHED}")
 
     with Connection(AMQP_BROKER_URL, heartbeat=60) as conn:
-            worker = Worker(conn, queues)
+            worker = Worker(conn, queue_jobs_finished)
             worker.run()
