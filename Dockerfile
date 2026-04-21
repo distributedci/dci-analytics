@@ -16,6 +16,7 @@ RUN microdnf update && \
   rpm -qa | sort > /tmp/rpms_before && \
   microdnf -y install python3-devel make gcc gcc-c++ postgresql-devel diffutils findutils file vi && \
   rpm -qa | sort > /tmp/rpms_after && \
+  pip3 install --upgrade pip setuptools wheel setuptools-rust && \
   pip3 --no-cache-dir install --no-binary=psycopg2 -r requirements.txt && \
   comm -13 /tmp/rpms_before /tmp/rpms_after | xargs microdnf remove && \
   rm /tmp/rpms_before /tmp/rpms_after && \

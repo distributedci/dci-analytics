@@ -26,7 +26,6 @@ from dci_analytics import exceptions
 import flask
 import pandas as pd
 
-
 logger = logging.getLogger()
 
 
