@@ -21,7 +21,6 @@ import pytest
 
 from dci_analytics.synchronizers import normalization_jobs_extra_hardware as hw
 
-
 # Anonymized VM sample data (based on KVM/QEMU virtual machine)
 VM_HARDWARE_SAMPLE = {
     "hardware": {

@@ -21,7 +21,6 @@ import logging
 from dci_analytics import api
 from dci_analytics import exceptions
 
-
 app = flask.Flask(__name__)
 
 

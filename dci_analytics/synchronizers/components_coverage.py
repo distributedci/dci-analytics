@@ -22,7 +22,6 @@ from dci_analytics import elasticsearch as es
 from dci_analytics import dci_db
 from dci_analytics import config
 
-
 logger = logging.getLogger(__name__)
 
 _ES_URL = config.CONFIG.get("ELASTICSEARCH_URL")
