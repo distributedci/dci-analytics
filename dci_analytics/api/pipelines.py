@@ -22,7 +22,6 @@ import logging
 from dci_analytics.api import api
 from dci_analytics import elasticsearch as es
 
-
 logger = logging.getLogger(__name__)
 
 

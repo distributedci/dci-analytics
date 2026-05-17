@@ -29,7 +29,6 @@ from dciclient.v1.api import file as dci_file
 import io
 import logging
 
-
 logger = logging.getLogger()
 
 

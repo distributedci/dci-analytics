@@ -24,7 +24,6 @@ from dci_analytics import dci_db
 
 import logging
 
-
 logger = logging.getLogger(__name__)
 
 

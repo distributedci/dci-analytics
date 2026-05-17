@@ -35,7 +35,6 @@ from xml.etree import ElementTree
 from xml.parsers.expat import errors as xml_errors
 from datetime import timedelta
 
-
 logger = logging.getLogger(__name__)
 
 _INDEX = "jobs"

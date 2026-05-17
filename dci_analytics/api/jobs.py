@@ -22,7 +22,6 @@ import logging
 from dci_analytics.api import api
 from dci_analytics import elasticsearch as es
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -38,12 +37,13 @@ def get_jobs():
     values = flask.request.json
     _jobs = es.search_json(latest_index_alias, values)
 
-    if "hits" not in _jobs:
-        _jobs = {}
-    elif "hits" not in _jobs["hits"]:
-        _jobs = {}
-    elif not _jobs["hits"]["hits"]:
-        _jobs = {}
+    if "aggregations" not in _jobs:
+        if "hits" not in _jobs:
+            _jobs = {}
+        elif "hits" not in _jobs["hits"]:
+            _jobs = {}
+        elif not _jobs["hits"]["hits"]:
+            _jobs = {}
 
     _jobs["_meta"] = es.get_index_meta(latest_index_alias)
     return flask.Response(
