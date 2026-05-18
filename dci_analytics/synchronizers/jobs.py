@@ -97,6 +97,7 @@ def parse_testsuite(testsuite_xml):
         "success": 0,
         "time": 0,
         "testcases": [],
+        "testcases_time": {},
         "properties": [],
     }
     testsuite_duration = timedelta(seconds=0)
@@ -116,6 +117,10 @@ def parse_testsuite(testsuite_xml):
             else:
                 testsuite["success"] += 1
             testsuite["testcases"].append(testcase)
+            testcase_id = f"{testcase['classname']}/{testcase['name']}"
+            testcase_id = testcase_id.strip()
+            testcase_id = testcase_id.replace(",", "_")
+            testsuite["testcases_time"][testcase_id] = testcase["time"]
         elif tag == "properties":
             testsuite["properties"] = parse_properties(testcase_xml)
     testsuite["time"] = testsuite_duration.total_seconds()

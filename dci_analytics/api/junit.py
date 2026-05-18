@@ -67,6 +67,12 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
                     {"range": {"created_at": {"gte": start_date, "lte": end_date}}},
                     {"term": {"topic_id": topic_id}},
                     {"term": {"remoteci_id": remoteci_id}},
+                    {
+                        "nested": {
+                            "path": "tests",
+                            "query": {"term": {"tests.name": test_name}},
+                        }
+                    },
                 ]
             }
         },
@@ -86,7 +92,8 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
             body["query"]["bool"]["must"].append({"term": {"tags": t}})
 
     while True:
-        jobs = es.search_json("tasks_junit", body)
+        latest_index_alias = es.get_latest_index_alias("jobs")
+        jobs = es.search_json(latest_index_alias, body)
         if "hits" not in jobs:
             break
         if not jobs["hits"]:
@@ -94,11 +101,11 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
         if "hits" not in jobs["hits"]:
             break
         jobs = jobs["hits"]["hits"]
-        jobs = filter_jobs(jobs, test_name)
         for j in jobs:
-            if j["junit_content"]:
-                df = pd.DataFrame(j["junit_content"], index=[j["id"]])
-                jobs_dataframes.append(df)
+            for t in j["tests"]:
+                if t["name"] == test_name:
+                    df = pd.DataFrame(t["testcases_time"], index=[j["id"]])
+                    jobs_dataframes.append(df)
         body["from"] += size
 
     if not jobs_dataframes:
@@ -107,7 +114,7 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
 
 
 def generate_bar_chart_data(tests):
-    intervals = [v for v in range(-110, 110, 10)]
+    intervals = [v for v in range(-110, 110, 5)]
     res = [0] * len(intervals)
     for _, v in tests.items():
         for i, vi in enumerate(intervals):
