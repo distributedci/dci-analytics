@@ -102,10 +102,13 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
             break
         jobs = jobs["hits"]["hits"]
         for j in jobs:
+            j = j["_source"]
             for t in j["tests"]:
                 if t["name"] == test_name:
-                    df = pd.DataFrame(t["testcases_time"], index=[j["id"]])
-                    jobs_dataframes.append(df)
+                    if len(t["testsuites"]) > 0:
+                        testcases_time = t["testsuites"][0]["testcases_time"]
+                        df = pd.DataFrame(testcases_time, index=[j["id"]])
+                        jobs_dataframes.append(df)
         body["from"] += size
 
     if not jobs_dataframes:
