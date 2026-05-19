@@ -23,7 +23,7 @@ from dci_analytics import config
 
 def get_session_db():
     _CONFIG = config.CONFIG
-    uri = "postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}".format(
+    uri = "postgresql+psycopg://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}".format(
         db_user=_CONFIG.get("POSTGRESQL_USER"),
         db_password=_CONFIG.get("POSTGRESQL_PASSWORD"),
         db_host=_CONFIG.get("POSTGRESQL_HOST"),
@@ -36,8 +36,6 @@ def get_session_db():
             uri,
             pool_size=5,
             max_overflow=25,
-            encoding="utf8",
-            convert_unicode=True,
             echo=False,
         )
     )()
