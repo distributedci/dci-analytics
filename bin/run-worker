@@ -90,11 +90,11 @@ if __name__ == '__main__':
     setup_logging()
     
     exchange = Exchange(dci_kombu.DCI_EXCHANGE, type="topic")
-    queue_jobs_finished = Queue(dci_kombu.QUEUE_JOBS_FINISHED, exchange, routing_key=dci_kombu.RK_JOBS_FINISHED)
+    queue_jobs_finished = Queue(dci_kombu.QUEUE_JOBS_FINISHED_ANALYTICS, exchange, routing_key=dci_kombu.RK_JOBS_FINISHED)
 
     logging.info("worker waiting for messages")
     logging.info(f"exchange: {dci_kombu.DCI_EXCHANGE}, type: topic")
-    logging.info(f"queue: {dci_kombu.QUEUE_JOBS_FINISHED}, routing_key: {dci_kombu.RK_JOBS_FINISHED}")
+    logging.info(f"queue: {dci_kombu.QUEUE_JOBS_FINISHED_ANALYTICS}, routing_key: {dci_kombu.RK_JOBS_FINISHED}")
 
     with Connection(AMQP_BROKER_URL, heartbeat=60) as conn:
             worker = Worker(conn, queue_jobs_finished)
