@@ -20,7 +20,10 @@ import json
 import logging
 
 from dci_analytics.api import api
+from dci_analytics import dci_db
+from dci.analytics import access_data_layer as a_d_l
 from dci_analytics import elasticsearch as es
+from datetime import datetime as dt
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +51,67 @@ def get_jobs():
     _jobs["_meta"] = es.get_index_meta(latest_index_alias)
     return flask.Response(
         json.dumps(_jobs),
+        status=200,
+        content_type="application/json",
+    )
+
+
+@api.route("/jobs/syncstate", strict_slashes=False, methods=["GET"])
+def get_syncstate():
+    latest_index_alias = es.get_latest_index_alias("jobs")
+    if not latest_index_alias:
+        return flask.Response(
+            json.dumps({"message": "no alias for prefix index 'jobs' found"}),
+            status=400,
+            content_type="application/json",
+        )
+
+    def _get_first_es_job_timestamp():
+        first_es_job_query = {
+            "size": 1,
+            "fields": ["created_at"],
+            "sort": [{"created_at": {"order": "asc"}}],
+        }
+        first_es_job = es.search_json(latest_index_alias, first_es_job_query)
+        if not first_es_job or not first_es_job["hits"]["hits"]:
+            return flask.Response(
+                json.dumps({"message": "no jobs first es job found"}),
+                status=400,
+                content_type="application/json",
+            )
+        return dt.fromisoformat(
+            first_es_job["hits"]["hits"][0]["_source"]["updated_at"]
+        )
+
+    first_es_job_timestamp = _get_first_es_job_timestamp()
+
+    session_db = dci_db.get_session_db()
+    limit = 1000
+    offset = 0
+
+    es_jobs_not_found = []
+    jobs_ids_from_dci_db = set()
+    while True:
+        jobs_ids = a_d_l.get_jobs_ids_from_timestamp(
+            session_db, offset, limit, first_es_job_timestamp
+        )
+        if not jobs_ids:
+            break
+        es_jobs = es.mget(latest_index_alias, jobs_ids)
+        es_jobs_not_found.extend(
+            [j["_id"] for j in es_jobs["docs"] if j["found"] is False]
+        )
+
+        jobs_ids_from_dci_db = jobs_ids_from_dci_db.union(set(jobs_ids))
+        offset += limit
+
+    return flask.Response(
+        json.dumps(
+            {
+                "jobs_from_dci_db": {"length": len(jobs_ids_from_dci_db)},
+                "es_jobs_not_found": es_jobs_not_found,
+            }
+        ),
         status=200,
         content_type="application/json",
     )
