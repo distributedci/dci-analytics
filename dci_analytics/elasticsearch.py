@@ -54,6 +54,12 @@ def get(index, doc_id):
         return None
 
 
+def mget(index, ids):
+    url = "%s/%s/_mget" % (_ES_URL, index)
+    res = requests.get(url, json={"ids": ids})
+    return res.json()
+
+
 def search(index, query=None):
     res = requests.get("%s/%s/_search?q=%s" % (_ES_URL, index, query))
     return res.json()
