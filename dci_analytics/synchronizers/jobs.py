@@ -360,7 +360,7 @@ def update_index(index):
             },
             "settings": {
                 "index.mapping.nested_objects.limit": 300000,
-                "index.mapping.total_fields.limit": 20000,
+                "index.mapping.total_fields.limit": 100000,
             },
         },
     )
