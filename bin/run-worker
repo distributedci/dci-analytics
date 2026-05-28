@@ -60,14 +60,16 @@ def setup_logging():
 
 
 class Worker(ConsumerMixin):
-    def __init__(self, connection, queue_jobs_finished, queue_jobs_updated):
+    def __init__(self, connection, queue_jobs_finished, queue_jobs_updated, queue_jobs_created):
         self.connection = connection
         self.queue_jobs_finished = queue_jobs_finished
         self.queue_jobs_updated = queue_jobs_updated
+        self.queue_jobs_created = queue_jobs_created
 
     def get_consumers(self, Consumer, channel):
         return [Consumer(queues=[self.queue_jobs_finished,
-                                 self.queue_jobs_updated],
+                                 self.queue_jobs_updated,
+                                 self.queue_jobs_created],
                          callbacks=[self.on_job_event])]
 
     def on_job_event(self, payload, message):
@@ -99,12 +101,14 @@ if __name__ == '__main__':
     exchange = Exchange(dci_kombu.DCI_EXCHANGE, type="topic")
     queue_jobs_finished = Queue(dci_kombu.QUEUE_JOBS_FINISHED_ANALYTICS, exchange, routing_key=dci_kombu.RK_JOBS_FINISHED)
     queue_jobs_updated = Queue(dci_kombu.QUEUE_JOBS_UPDATED_ANALYTICS, exchange, routing_key=dci_kombu.RK_JOBS_UPDATED)
+    queue_jobs_created = Queue(dci_kombu.QUEUE_JOBS_CREATED_ANALYTICS, exchange, routing_key=dci_kombu.RK_JOBS_CREATED)
 
     logging.info("worker waiting for messages")
     logging.info(f"exchange: {dci_kombu.DCI_EXCHANGE}, type: topic")
     logging.info(f"queue: {dci_kombu.QUEUE_JOBS_FINISHED_ANALYTICS}, routing_key: {dci_kombu.RK_JOBS_FINISHED}")
     logging.info(f"queue: {dci_kombu.QUEUE_JOBS_UPDATED_ANALYTICS}, routing_key: {dci_kombu.RK_JOBS_UPDATED}")
+    logging.info(f"queue: {dci_kombu.QUEUE_JOBS_CREATED_ANALYTICS}, routing_key: {dci_kombu.RK_JOBS_CREATED}")
 
     with Connection(AMQP_BROKER_URL, heartbeat=60) as conn:
-            worker = Worker(conn, queue_jobs_finished, queue_jobs_updated)
+            worker = Worker(conn, queue_jobs_finished, queue_jobs_updated, queue_jobs_created)
             worker.run()
