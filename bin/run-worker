@@ -60,29 +60,37 @@ def setup_logging():
 
 
 class Worker(ConsumerMixin):
-    def __init__(self, connection, queue_jobs_finished):
+    def __init__(self, connection, queue_jobs_finished, queue_jobs_updated):
         self.connection = connection
         self.queue_jobs_finished = queue_jobs_finished
+        self.queue_jobs_updated = queue_jobs_updated
 
     def get_consumers(self, Consumer, channel):
-        return [Consumer(queues=self.queue_jobs_finished,
-                         callbacks=[self.on_job_finished])]
+        return [Consumer(queues=[self.queue_jobs_finished,
+                                 self.queue_jobs_updated],
+                         callbacks=[self.on_job_event])]
 
-    def on_job_finished(self, payload, message):
+    def on_job_event(self, payload, message):
+        routing_key = message.delivery_info.get("routing_key")
         job_id = payload["job_id"]
-        logging.info(f"Handle job finished event: job_id {job_id}")
+        logging.info(f"Received from {routing_key}: {job_id}")
 
-        latest_index_alias = es.get_latest_index_alias(_INDEX)
-        logging.info(f"latest_index_alias: {latest_index_alias}")
-        if latest_index_alias:
-             jobs.sync_one_job(latest_index_alias, job_id)
-        else:
-             new_index_name = es.generate_new_index_name(_INDEX)
-             logging.info(f"new index created: '{new_index_name}'")
-             jobs.sync_one_job(new_index_name, job_id)
-             new_alias = es.add_alias_to_index("jobs", new_index_name)
-             logging.info(f"new alias '{new_alias}' added for index: '{new_index_name}'")
-        message.ack()
+        try: 
+            latest_index_alias = es.get_latest_index_alias(_INDEX)
+            logging.info(f"latest_index_alias: {latest_index_alias}")
+            if latest_index_alias:
+                jobs.sync_one_job(latest_index_alias, job_id)
+            else:
+                new_index_name = es.generate_new_index_name(_INDEX)
+                logging.info(f"new index created: '{new_index_name}'")
+                jobs.sync_one_job(new_index_name, job_id)
+                new_alias = es.add_alias_to_index("jobs", new_index_name)
+                logging.info(f"new alias '{new_alias}' added for index: '{new_index_name}'")
+            message.ack()
+
+        except Exception as e:
+            logging.error(f"Error while handling job {job_id}: {e}")
+            message.reject(requeue=True)
 
 
 if __name__ == '__main__':
@@ -91,11 +99,13 @@ if __name__ == '__main__':
     
     exchange = Exchange(dci_kombu.DCI_EXCHANGE, type="topic")
     queue_jobs_finished = Queue(dci_kombu.QUEUE_JOBS_FINISHED_ANALYTICS, exchange, routing_key=dci_kombu.RK_JOBS_FINISHED)
+    queue_jobs_updated = Queue(dci_kombu.QUEUE_JOBS_UPDATED_ANALYTICS, exchange, routing_key=dci_kombu.RK_JOBS_UPDATED)
 
     logging.info("worker waiting for messages")
     logging.info(f"exchange: {dci_kombu.DCI_EXCHANGE}, type: topic")
     logging.info(f"queue: {dci_kombu.QUEUE_JOBS_FINISHED_ANALYTICS}, routing_key: {dci_kombu.RK_JOBS_FINISHED}")
+    logging.info(f"queue: {dci_kombu.QUEUE_JOBS_UPDATED_ANALYTICS}, routing_key: {dci_kombu.RK_JOBS_UPDATED}")
 
     with Connection(AMQP_BROKER_URL, heartbeat=60) as conn:
-            worker = Worker(conn, queue_jobs_finished)
+            worker = Worker(conn, queue_jobs_finished, queue_jobs_updated)
             worker.run()
