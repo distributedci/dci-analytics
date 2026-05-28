@@ -86,11 +86,10 @@ class Worker(ConsumerMixin):
                 jobs.sync_one_job(new_index_name, job_id)
                 new_alias = es.add_alias_to_index("jobs", new_index_name)
                 logging.info(f"new alias '{new_alias}' added for index: '{new_index_name}'")
-            message.ack()
 
         except Exception as e:
-            logging.error(f"Error while handling job {job_id}: {e}")
-            message.reject(requeue=True)
+            logging.exception(f"Error while handling job {job_id}: {e}")
+        message.ack()
 
 
 if __name__ == '__main__':
