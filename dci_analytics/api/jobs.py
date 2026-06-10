@@ -18,6 +18,7 @@ import flask
 
 import json
 import logging
+import threading
 
 from dci_analytics.api import api
 from dci_analytics import dci_db
@@ -26,6 +27,37 @@ from dci_analytics import elasticsearch as es
 from datetime import datetime as dt
 
 logger = logging.getLogger(__name__)
+
+
+SYNC_STATE_LOCK = threading.Lock()
+
+
+def lock_and_run(lock, func):
+    if lock.acquire(blocking=False):
+        threading.Thread(
+            target=func,
+            daemon=True,
+            args=(lock,),
+        ).start()
+        return flask.Response(
+            json.dumps(
+                {
+                    "message": "Run syncstate",
+                }
+            ),
+            status=201,
+            content_type="application/json",
+        )
+    else:
+        return flask.Response(
+            json.dumps(
+                {
+                    "message": "Already running syncstate, please try later",
+                }
+            ),
+            status=400,
+            content_type="application/json",
+        )
 
 
 @api.route("/jobs", strict_slashes=False, methods=["GET"])
@@ -56,8 +88,7 @@ def get_jobs():
     )
 
 
-@api.route("/jobs/syncstate", strict_slashes=False, methods=["GET"])
-def get_syncstate():
+def _get_syncstate(lock):
     latest_index_alias = es.get_latest_index_alias("jobs")
     if not latest_index_alias:
         return flask.Response(
@@ -69,27 +100,29 @@ def get_syncstate():
     def _get_first_es_job_timestamp():
         first_es_job_query = {
             "size": 1,
-            "fields": ["created_at"],
-            "sort": [{"created_at": {"order": "asc"}}],
+            "fields": ["updated_at"],
+            "sort": [{"updated_at": {"order": "asc"}}],
         }
         first_es_job = es.search_json(latest_index_alias, first_es_job_query)
         if not first_es_job or not first_es_job["hits"]["hits"]:
-            return flask.Response(
-                json.dumps({"message": "no jobs first es job found"}),
-                status=400,
-                content_type="application/json",
-            )
+            return None
+
         return dt.fromisoformat(
             first_es_job["hits"]["hits"][0]["_source"]["updated_at"]
         )
 
     first_es_job_timestamp = _get_first_es_job_timestamp()
+    if not first_es_job_timestamp:
+        return flask.Response(
+            json.dumps({"message": "no jobs first es job found"}),
+            status=400,
+            content_type="application/json",
+        )
 
     session_db = dci_db.get_session_db()
     limit = 1000
     offset = 0
 
-    es_jobs_not_found = []
     jobs_ids_from_dci_db = set()
     while True:
         jobs_ids = a_d_l.get_jobs_ids_from_timestamp(
@@ -97,24 +130,61 @@ def get_syncstate():
         )
         if not jobs_ids:
             break
-        es_jobs = es.mget(latest_index_alias, jobs_ids)
-        es_jobs_not_found.extend(
-            [j["_id"] for j in es_jobs["docs"] if j["found"] is False]
-        )
-
-        jobs_ids_from_dci_db = jobs_ids_from_dci_db.union(set(jobs_ids))
+        jobs_ids_from_dci_db.update(set(jobs_ids))
         offset += limit
 
-    return flask.Response(
-        json.dumps(
+    jobs_ids_from_es = set()
+    es_page_size = 100
+    es_query = {
+        "size": es_page_size,
+        "_source": ["id"],
+        "sort": [
             {
-                "jobs_from_dci_db": {"length": len(jobs_ids_from_dci_db)},
-                "es_jobs_not_found": es_jobs_not_found,
-            }
-        ),
-        status=200,
-        content_type="application/json",
+                "updated_at": {
+                    "order": "asc",
+                    "format": "strict_date_optional_time_nanos",
+                }
+            },
+            {"id": {"order": "asc"}},
+        ],
+        "search_after": [first_es_job_timestamp.isoformat(), ""],
+    }
+    while True:
+        res = es.search_json(latest_index_alias, es_query)
+        hits = res.get("hits", {}).get("hits", [])
+        if not hits:
+            break
+        jobs_ids_from_es.update({str(j["_source"]["id"]) for j in hits})
+        es_query["search_after"] = hits[-1]["sort"]
+
+    es_jobs_not_found = list(jobs_ids_from_dci_db - jobs_ids_from_es)
+    db_jobs_not_found = list(jobs_ids_from_es - jobs_ids_from_dci_db)
+
+    es.update(
+        "syncstate",
+        {
+            "jobs_from_dci_db": {"length": len(jobs_ids_from_dci_db)},
+            "jobs_from_es": {"length": len(jobs_ids_from_es)},
+            "es_jobs_not_found": es_jobs_not_found,
+            "db_jobs_not_found": db_jobs_not_found,
+        },
+        "syncstate",
     )
+
+
+@api.route("/jobs/syncstate", strict_slashes=False, methods=["POST"])
+def syncstate():
+    try:
+        return lock_and_run(SYNC_STATE_LOCK, _get_syncstate)
+    except Exception as e:
+        logger.error(f"Error getting syncstate: {e}")
+        return flask.Response(
+            json.dumps({"message": "Error getting syncstate"}),
+            status=500,
+            content_type="application/json",
+        )
+    finally:
+        SYNC_STATE_LOCK.release()
 
 
 @api.route("/jobs/autocomplete", strict_slashes=False, methods=["GET"])
