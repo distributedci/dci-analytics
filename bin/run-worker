@@ -91,7 +91,8 @@ class Worker(ConsumerMixin):
 
         except Exception as e:
             logging.exception(f"Error while handling job {job_id}: {e}")
-        message.ack()
+        finally:
+            message.ack()
 
 
 if __name__ == '__main__':
