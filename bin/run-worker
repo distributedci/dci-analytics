@@ -73,16 +73,28 @@ class Worker(ConsumerMixin):
                          callbacks=[self.on_job_event])]
 
     def on_job_event(self, payload, message):
-        routing_key = message.delivery_info.get("routing_key")
-        job_id = payload["job_id"]
-        logging.info(f"Received from {routing_key}: {job_id}")
+        job_id = None
+        ack_message = True
+        try:
+            routing_key = message.delivery_info.get("routing_key")
+            job_id = payload["job_id"]
+            logging.info(f"Received from {routing_key}: {job_id}")
 
-        try: 
-            latest_index_alias = es.get_latest_index_alias(_INDEX)
+            try:
+                latest_index_alias = es.get_latest_index_alias(_INDEX)
+            except es.ElasticsearchUnavailable:
+                logging.exception(
+                    "Elasticsearch unavailable, requeueing job %s", job_id
+                )
+                message.reject(requeue=True)
+                ack_message = False
+                return
+
             logging.info(f"latest_index_alias: {latest_index_alias}")
             if latest_index_alias:
                 jobs.sync_one_job(latest_index_alias, job_id)
             else:
+                logging.info("no jobs alias found in elasticsearch, bootstrapping index")
                 new_index_name = es.generate_new_index_name(_INDEX)
                 logging.info(f"new index created: '{new_index_name}'")
                 jobs.sync_one_job(new_index_name, job_id)
@@ -92,7 +104,8 @@ class Worker(ConsumerMixin):
         except Exception as e:
             logging.exception(f"Error while handling job {job_id}: {e}")
         finally:
-            message.ack()
+            if ack_message:
+                message.ack()
 
 
 if __name__ == '__main__':

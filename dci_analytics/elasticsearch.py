@@ -27,6 +27,10 @@ _ES_URL = config.CONFIG.get("ELASTICSEARCH_URL")
 logger = logging.getLogger(__name__)
 
 
+class ElasticsearchUnavailable(Exception):
+    pass
+
+
 def push(index, data, doc_id):
     url = "%s/%s/_create/%s" % (_ES_URL, index, doc_id)
     logger.debug(f"url: {url}")
@@ -167,16 +171,23 @@ def get_index_meta(index):
 
 def get_latest_index_alias(index_prefix):
     aliases_url = "%s/_cat/aliases?format=json" % _ES_URL
-    result = requests.get(aliases_url)
+    try:
+        result = requests.get(aliases_url)
+    except requests.RequestException as exc:
+        logger.error("error while reaching elasticsearch: %s" % exc)
+        raise ElasticsearchUnavailable(str(exc)) from exc
+
     if result.status_code != 200:
         logger.error("error while getting aliases: %s" % result.text)
-        return None
-    result = result.json()
-    if len(result) == 0:
-        logger.debug("no aliases found")
+        raise ElasticsearchUnavailable(
+            "elasticsearch returned status %s" % result.status_code
+        )
+
+    aliases = [a["alias"] for a in result.json() if a["alias"].startswith(index_prefix)]
+    if not aliases:
+        logger.debug("no aliases found for prefix '%s'" % index_prefix)
         return None
 
-    aliases = [a["alias"] for a in result if a["alias"].startswith(index_prefix)]
     aliases.sort()
     return aliases[-1]
 
