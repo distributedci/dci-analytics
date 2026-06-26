@@ -22,6 +22,7 @@ import logging
 import threading
 
 from dci_analytics.api import api
+from dci_analytics.synchronizers import jobs
 from dci_analytics import exceptions
 
 logger = logging.getLogger(__name__)
@@ -138,3 +139,19 @@ def telco_sync():
 def jobs_sync():
     synchronization_type = _get_request_json_key("type", "partial")
     return _run_synchronization("jobs", synchronization_type)
+
+
+@api.route(
+    "/synchronization/jobs/<uuid:job_id>", strict_slashes=False, methods=["POST"]
+)
+def jobs_sync_one(job_id):
+    jobs.sync_one_job(jobs._INDEX, job_id)
+    return flask.Response(
+        json.dumps(
+            {
+                "message": "Run synchronization",
+            }
+        ),
+        status=201,
+        content_type="application/json",
+    )
