@@ -19,9 +19,18 @@ from flask import json
 
 import logging
 
+from dci_analytics import auth
+
 logger = logging.getLogger(__name__)
 
 api = flask.Blueprint("api", __name__)
+
+
+@api.before_request
+def require_jwt():
+    if flask.request.endpoint == "api.index":
+        return None
+    auth.authenticate_request()
 
 
 @api.route("/ok", strict_slashes=False)
