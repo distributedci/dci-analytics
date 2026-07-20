@@ -33,6 +33,9 @@ def get_config():
         "DCI_CLIENT_ID": os.getenv("DCI_CLIENT_ID", ""),
         "DCI_API_SECRET": os.getenv("DCI_API_SECRET", ""),
         "DCI_CS_URL": os.getenv("DCI_CS_URL", "http://api:5000"),
+        "ANALYTICS_JWT_SECRET": os.getenv("ANALYTICS_JWT_SECRET", ""),
+        "ANALYTICS_JWT_AUDIENCE": os.getenv("ANALYTICS_JWT_AUDIENCE", "dci-analytics"),
+        "ANALYTICS_JWT_TTL_SECONDS": int(os.getenv("ANALYTICS_JWT_TTL_SECONDS", "300")),
     }
 
     return _config

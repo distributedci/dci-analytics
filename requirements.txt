@@ -13,4 +13,5 @@ psycopg[binary,pool]
 SQLAlchemy
 SQLAlchemy-Utils
 urllib3
+pyjwt
 git+https://github.com/distributedci/dci-control-server
