@@ -12,8 +12,7 @@ WORKDIR /opt/dci-analytics
 
 
 RUN microdnf upgrade -y && \
-  microdnf install -y python3 python3-pip python3-wheel libpq git && \
-  microdnf install -y python3-devel make gcc gcc-c++ postgresql-devel diffutils findutils file vi && \
+  microdnf install -y python3 python3-pip git && \
   pip install --no-cache-dir --upgrade pip && \
   pip install --no-cache-dir --requirement requirements.txt && \
   microdnf -y clean all
