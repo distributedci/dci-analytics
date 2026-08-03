@@ -8,7 +8,7 @@ lxml
 requests
 numpy
 pandas
-gunicorn
+gunicorn[gevent]
 psycopg[binary,pool]
 SQLAlchemy
 SQLAlchemy-Utils

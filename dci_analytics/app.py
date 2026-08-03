@@ -14,6 +14,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from gevent import monkey
+
+monkey.patch_all()
 
 import flask
 import logging
