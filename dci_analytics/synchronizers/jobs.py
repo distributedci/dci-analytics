@@ -120,6 +120,8 @@ def parse_testsuite(testsuite_xml):
             testcase_id = f"{testcase['classname']}/{testcase['name']}"
             testcase_id = testcase_id.strip()
             testcase_id = testcase_id.replace(",", "_")
+            if not testcase["time"]:
+                testcase["time"] = 0.0
             testsuite["testcases_time"][testcase_id] = testcase["time"]
         elif tag == "properties":
             testsuite["properties"] = parse_properties(testcase_xml)
@@ -345,7 +347,10 @@ def update_index(index):
                         "properties": {
                             "testsuites": {
                                 "type": "nested",
-                                "properties": {"testcases": {"type": "nested"}},
+                                "properties": {
+                                    "testcases": {"type": "nested"},
+                                    "testcases_time": {"type": "flattened"},
+                                },
                             }
                         },
                     },
