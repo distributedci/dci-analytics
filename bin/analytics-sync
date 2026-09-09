@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) Red Hat, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+import argparse
+import atexit
+import fcntl
+import importlib
+import logging
+import os
+import sys
+import uuid
+
+_DESCRIPTION = "Run a DCI Analytics Elasticsearch synchronization."
+_EPILOG = """\
+examples:
+  analytics-sync jobs
+  analytics-sync jobs --type full
+  analytics-sync jobs --job-id 01234567-89ab-cdef-0123-456789abcdef
+  analytics-sync junit --type partial
+"""
+_TYPE_HELP = (
+    "partial updates recent data; full rebuilds a longer window (default: partial)"
+)
+
+
+def setup_logging():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        stream=sys.stdout,
+    )
+
+
+def _job_id(value):
+    try:
+        return str(uuid.UUID(value))
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"invalid job id: {value!r}")
+
+
+def _add_type_argument(parser):
+    parser.add_argument(
+        "--type",
+        choices=("partial", "full"),
+        default="partial",
+        help=_TYPE_HELP,
+    )
+
+
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(
+        prog="analytics-sync",
+        description=_DESCRIPTION,
+        epilog=_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    subparsers = parser.add_subparsers(dest="name", required=True, metavar="NAME")
+
+    jobs_parser = subparsers.add_parser(
+        "jobs",
+        help="sync the jobs index",
+        description=(
+            "Sync the jobs index (partial: 6h, full: 52 weeks on a new index, "
+            "or one job via --job-id)."
+        ),
+    )
+    _add_type_argument(jobs_parser)
+    jobs_parser.add_argument(
+        "--job-id",
+        type=_job_id,
+        metavar="UUID",
+        help="sync a single job by id",
+    )
+    jobs_parser.set_defaults(handler=run_jobs)
+
+    junit_parser = subparsers.add_parser(
+        "junit",
+        help="sync JUnit test results",
+        description="Sync JUnit test results (partial: 6h, full: 12 weeks).",
+    )
+    _add_type_argument(junit_parser)
+    junit_parser.set_defaults(handler=run_junit)
+
+    return parser.parse_args(argv)
+
+
+def _release_sync_lock(lock_file):
+    fcntl.flock(lock_file, fcntl.LOCK_UN)
+    lock_file.close()
+
+
+def acquire_sync_lock(name):
+    lock_path = f"/run/dci-analytics/dci-analytics-sync-{name}.lock"
+    try:
+        fd = os.open(
+            lock_path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600
+        )
+    except OSError as exc:
+        logging.getLogger(__name__).error(
+            "cannot open lock file %s: %s", lock_path, exc
+        )
+        raise
+    lock_file = os.fdopen(fd, "r+")
+    try:
+        fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        lock_file.close()
+        return None
+    atexit.register(_release_sync_lock, lock_file)
+    return lock_file
+
+
+def sync_one_job(job_id):
+    from dci_analytics import elasticsearch as es
+    from dci_analytics.synchronizers import jobs
+
+    latest_index_alias = es.get_latest_index_alias(jobs._INDEX)
+    if latest_index_alias:
+        jobs.sync_one_job(latest_index_alias, job_id)
+        return
+
+    logger = logging.getLogger(__name__)
+    logger.info("no jobs alias found in elasticsearch, bootstrapping index")
+    new_index_name = es.generate_new_index_name(jobs._INDEX)
+    jobs.sync_one_job(new_index_name, job_id)
+    es.add_alias_to_index("jobs", new_index_name)
+
+
+def run_named_sync(args):
+    logger = logging.getLogger(__name__)
+    name = args.name
+    synchronization_type = args.type
+    synchronizer = importlib.import_module(
+        name=f".{name}", package="dci_analytics.synchronizers"
+    )
+    synchronization_function = getattr(synchronizer, synchronization_type)
+    logger.info("%s: running %s synchronization", name, synchronization_type)
+    try:
+        synchronization_function()
+    except Exception:
+        logger.exception("%s: %s synchronization failed", name, synchronization_type)
+        return 1
+    return 0
+
+
+def run_jobs(args):
+    if args.job_id:
+        logger = logging.getLogger(__name__)
+        logger.info("jobs: syncing job %s", args.job_id)
+        try:
+            sync_one_job(args.job_id)
+        except Exception:
+            logger.exception("jobs: synchronization of job %s failed", args.job_id)
+            return 1
+        return 0
+    return run_named_sync(args)
+
+
+def run_junit(args):
+    return run_named_sync(args)
+
+
+def main(argv=None):
+    args = parse_args(argv)
+    setup_logging()
+    logger = logging.getLogger(__name__)
+    try:
+        lock_file = acquire_sync_lock(args.name)
+    except OSError:
+        return 1
+    if lock_file is None:
+        logger.error("Already synchronizing, please try later")
+        return 1
+
+    return args.handler(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
