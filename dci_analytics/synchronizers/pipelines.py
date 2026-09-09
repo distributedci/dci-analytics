@@ -82,11 +82,9 @@ def _sync(unit, amount):
     session_db.close()
 
 
-def partial(_lock_synchronization):
+def partial():
     _sync("hours", 6)
-    _lock_synchronization.release()
 
 
-def full(_lock_synchronization):
+def full():
     _sync("weeks", 24)
-    _lock_synchronization.release()

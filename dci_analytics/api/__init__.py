@@ -45,7 +45,6 @@ def index():
 
 import dci_analytics.api.junit  # noqa
 import dci_analytics.api.pipelines  # noqa
-import dci_analytics.api.synchronization  # noqa
 import dci_analytics.api.jobs  # noqa
 import dci_analytics.api.duration_cumulated  # noqa
 import dci_analytics.api.components_coverage  # noqa
