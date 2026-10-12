@@ -77,11 +77,14 @@ def parse_testcase(testcase_xml):
     }
     for testcase_child in testcase_xml:
         tag = testcase_child.tag
-        if tag not in ["skipped", "error", "failure"]:
+        if tag == "properties":
+            testcase["properties"] = parse_properties(testcase_child)
+        elif tag in ["skipped", "error", "failure"]:
+            testcase["action"] = tag
+            testcase["message"] = testcase_child.get("message", None)
+            testcase["type"] = testcase_child.get("type", None)
+        else:
             continue
-        testcase["action"] = tag
-        testcase["message"] = testcase_child.get("message", None)
-        testcase["type"] = testcase_child.get("type", None)
         testcase_child.clear()
     return testcase
 

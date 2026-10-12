@@ -15,6 +15,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import io
+
 import mock
 
 from dci_analytics.synchronizers import jobs
@@ -32,6 +34,69 @@ def test_get_tests(m_es_push, m_gtfa, m_gtfc):
         jobs._INDEX_JUNIT_CACHE, {"created_at": "created_at", "tests": ["tests"]}, "id"
     )
     assert tests == ["tests"]
+
+
+JUNIT_WITH_PROPERTIES = """<testsuite errors="1" failures="1" name="pytest" skipped="1" tests="6" time="4.04239122">
+    <properties>
+        <property name="p1" value="v1"></property>
+        <property name="p2" value="v2"></property>
+    </properties>
+    <testcase classname="classname_1" name="test_1" time="0.02311568802">
+        <skipped message="skip message" type="skipped">test skipped</skipped>
+        <properties>
+            <property name="p3" value="v3"></property>
+            <property name="p4" value="v4"></property>
+        </properties>
+    </testcase>
+    <testcase classname="classname_1" name="test_2" time="0.91562318802">
+        <error message="error message" type="error">test in error</error>
+        <properties>
+            <property name="p5" value="v5"></property>
+            <property name="p6" value="v6"></property>
+        </properties>
+    </testcase>
+    <testcase classname="classname_1" name="test_3" time="0.18802915623">
+        <failure message="failure message" type="failure">test in failure</failure>
+        <properties></properties>
+    </testcase>
+    <testcase classname="classname_1" name="test_4" time="2.91562318802"/>
+    <testcase classname="classname_1" name="test_5" time="3.23423443444">
+        <system-out>STDOUT</system-out>
+        <properties></properties>
+    </testcase>
+    <testcase classname="classname_1" name="test_6" time="2.48294832443">
+        <system-err>STDERR</system-err>
+        <properties></properties>
+    </testcase>
+</testsuite>
+"""
+
+
+def test_parse_junit_with_properties():
+    testsuites = jobs.parse_junit(io.StringIO(JUNIT_WITH_PROPERTIES))
+    assert len(testsuites) == 1
+    assert testsuites[0]["properties"] == [
+        {"name": "p1", "value": "v1"},
+        {"name": "p2", "value": "v2"},
+    ]
+    properties_by_testcase = {
+        testcase["name"]: testcase["properties"]
+        for testcase in testsuites[0]["testcases"]
+    }
+    assert properties_by_testcase == {
+        "test_1": [
+            {"name": "p3", "value": "v3"},
+            {"name": "p4", "value": "v4"},
+        ],
+        "test_2": [
+            {"name": "p5", "value": "v5"},
+            {"name": "p6", "value": "v6"},
+        ],
+        "test_3": [],
+        "test_4": [],
+        "test_5": [],
+        "test_6": [],
+    }
 
 
 def test_clean_doted_keys():
