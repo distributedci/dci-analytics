@@ -435,6 +435,18 @@ def sync_one_job(index, job_id):
     try:
         session_db = dci_db.get_session_db()
         job = a_d_l.get_job_by_id(session_db, job_id)
+
+        doc = es.get(index, job["id"])
+        sql_etag = job.get("etag")
+        es_etag = doc.get("etag") if doc else None
+        if sql_etag and sql_etag == es_etag:
+            logger.info(
+                "job %s unchanged (etag %s), skipping synchronization",
+                job_id,
+                sql_etag,
+            )
+            return
+
         is_index_created = update_index(index)
         api_conn = _get_api_connection()
 

@@ -172,3 +172,79 @@ def test_clean_doted_keys():
             },
         }
     }
+
+
+def _job(etag="etag-sql"):
+    return {
+        "id": "job-id",
+        "etag": etag,
+        "created_at": "created_at",
+        "updated_at": "updated_at",
+    }
+
+
+@mock.patch("dci_analytics.synchronizers.jobs.es.update_index_meta")
+@mock.patch("dci_analytics.synchronizers.jobs._get_api_connection")
+@mock.patch("dci_analytics.synchronizers.jobs.process")
+@mock.patch("dci_analytics.synchronizers.jobs.update_index")
+@mock.patch("dci_analytics.synchronizers.jobs.es.get")
+@mock.patch("dci_analytics.synchronizers.jobs.a_d_l.get_job_by_id")
+@mock.patch("dci_analytics.synchronizers.jobs.dci_db.get_session_db")
+def test_sync_one_job_skips_when_etag_unchanged(
+    m_session, m_get_job, m_es_get, m_update_index, m_process, m_api, m_meta
+):
+    m_get_job.return_value = _job("same-etag")
+    m_es_get.return_value = {"etag": "same-etag"}
+
+    jobs.sync_one_job("jobs-alias", "job-id")
+
+    m_es_get.assert_called_once_with("jobs-alias", "job-id")
+    m_process.assert_not_called()
+    m_update_index.assert_not_called()
+    m_api.assert_not_called()
+    m_meta.assert_not_called()
+    m_session.return_value.close.assert_called_once()
+
+
+@mock.patch("dci_analytics.synchronizers.jobs.es.update_index_meta")
+@mock.patch("dci_analytics.synchronizers.jobs._get_api_connection")
+@mock.patch("dci_analytics.synchronizers.jobs.process")
+@mock.patch("dci_analytics.synchronizers.jobs.update_index")
+@mock.patch("dci_analytics.synchronizers.jobs.es.get")
+@mock.patch("dci_analytics.synchronizers.jobs.a_d_l.get_job_by_id")
+@mock.patch("dci_analytics.synchronizers.jobs.dci_db.get_session_db")
+def test_sync_one_job_syncs_when_etag_differs(
+    m_session, m_get_job, m_es_get, m_update_index, m_process, m_api, m_meta
+):
+    job = _job("etag-sql")
+    m_get_job.return_value = job
+    m_es_get.return_value = {"etag": "etag-es"}
+    m_update_index.return_value = False
+    m_api.return_value = {"api": True}
+
+    jobs.sync_one_job("jobs-alias", "job-id")
+
+    m_process.assert_called_once_with("jobs-alias", job, {"api": True})
+    m_meta.assert_called_once_with("jobs-alias", last_job_date="updated_at")
+
+
+@mock.patch("dci_analytics.synchronizers.jobs.es.update_index_meta")
+@mock.patch("dci_analytics.synchronizers.jobs._get_api_connection")
+@mock.patch("dci_analytics.synchronizers.jobs.process")
+@mock.patch("dci_analytics.synchronizers.jobs.update_index")
+@mock.patch("dci_analytics.synchronizers.jobs.es.get")
+@mock.patch("dci_analytics.synchronizers.jobs.a_d_l.get_job_by_id")
+@mock.patch("dci_analytics.synchronizers.jobs.dci_db.get_session_db")
+def test_sync_one_job_syncs_when_document_missing(
+    m_session, m_get_job, m_es_get, m_update_index, m_process, m_api, m_meta
+):
+    job = _job("etag-sql")
+    m_get_job.return_value = job
+    m_es_get.return_value = None
+    m_update_index.return_value = False
+    m_api.return_value = {"api": True}
+
+    jobs.sync_one_job("jobs-alias", "job-id")
+
+    m_process.assert_called_once_with("jobs-alias", job, {"api": True})
+    m_meta.assert_called_once_with("jobs-alias", last_job_date="updated_at")
