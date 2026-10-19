@@ -34,6 +34,7 @@ class HardwareInfo:
 
     node: str
     data: Dict[str, Any]
+    bmc: Optional[Dict[str, Optional[str]]]
     input_name: str
 
     def __init__(self, input_name: str, raw_data: Dict[str, Any]) -> None:
@@ -49,6 +50,7 @@ class HardwareInfo:
             hw_wrapper = raw_data["hardware"]
             self.node = hw_wrapper.get("node", "")
             self.data = hw_wrapper.get("data", {})
+            self.bmc = self._extract_bmc(hw_wrapper.get("bmc"))
             self.input_name = input_name
         else:
             raise ValueError(
@@ -62,7 +64,7 @@ class HardwareInfo:
         Returns:
             Flat hardware information dictionary
         """
-        result = {"node": self.node}
+        result = {"node": self.node, "bmc": self.bmc}
 
         result.update(self._extract_system_info())
         result.update(self._extract_bios_info())
@@ -243,6 +245,15 @@ class HardwareInfo:
                 result["extended"] = " ".join(parts[1:])
 
         return result
+
+    def _extract_bmc(self, bmc: Any) -> Optional[Dict[str, Optional[str]]]:
+        """Copy BMC vendor and version from the hardware wrapper."""
+        if not isinstance(bmc, dict):
+            return None
+        return {
+            "vendor": bmc.get("vendor"),
+            "version": bmc.get("version"),
+        }
 
     def _extract_system_info(self) -> Dict[str, Optional[str]]:
         """Extract system vendor and model from root node."""
