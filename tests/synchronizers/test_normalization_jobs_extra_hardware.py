@@ -789,6 +789,48 @@ class TestNormalizeFunction:
         assert result["system_vendor"] == "Dell Inc."
 
 
+class TestBmc:
+    """Test BMC vendor and version from the hardware wrapper."""
+
+    def test_bmc_present(self):
+        """Test BMC vendor and version are copied onto the result."""
+        data = {
+            "hardware": {
+                "node": "sno2.samsung.ran.lab",
+                "data": {"id": "computer", "class": "system"},
+                "bmc": {"vendor": "Dell", "version": "7.30.30.51"},
+            }
+        }
+        result = hw.normalize("hardware.json", data)
+        assert result is not None
+        assert result["bmc"] == {"vendor": "Dell", "version": "7.30.30.51"}
+
+    def test_bmc_missing(self):
+        """Test missing BMC becomes None."""
+        data = {
+            "hardware": {
+                "node": "test",
+                "data": {"id": "computer", "class": "system"},
+            }
+        }
+        result = hw.normalize("hardware.json", data)
+        assert result is not None
+        assert result["bmc"] is None
+
+    def test_bmc_not_a_dict(self):
+        """Test a non-dict BMC becomes None."""
+        data = {
+            "hardware": {
+                "node": "test",
+                "data": {"id": "computer", "class": "system"},
+                "bmc": "Dell",
+            }
+        }
+        result = hw.normalize("hardware.json", data)
+        assert result is not None
+        assert result["bmc"] is None
+
+
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
