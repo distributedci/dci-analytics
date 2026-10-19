@@ -790,15 +790,18 @@ class TestNormalizeFunction:
 
 
 class TestBmc:
-    """Test BMC vendor and version from the hardware wrapper."""
+    """Test BMC vendor and version from the lshw root."""
 
     def test_bmc_present(self):
         """Test BMC vendor and version are copied onto the result."""
         data = {
             "hardware": {
                 "node": "sno2.samsung.ran.lab",
-                "data": {"id": "computer", "class": "system"},
-                "bmc": {"vendor": "Dell", "version": "7.30.30.51"},
+                "data": {
+                    "id": "computer",
+                    "class": "system",
+                    "bmc": {"vendor": "Dell", "version": "7.30.30.51"},
+                },
             }
         }
         result = hw.normalize("hardware.json", data)
@@ -822,8 +825,11 @@ class TestBmc:
         data = {
             "hardware": {
                 "node": "test",
-                "data": {"id": "computer", "class": "system"},
-                "bmc": "Dell",
+                "data": {
+                    "id": "computer",
+                    "class": "system",
+                    "bmc": "Dell",
+                },
             }
         }
         result = hw.normalize("hardware.json", data)
