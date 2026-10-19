@@ -50,7 +50,9 @@ class HardwareInfo:
             hw_wrapper = raw_data["hardware"]
             self.node = hw_wrapper.get("node", "")
             self.data = hw_wrapper.get("data", {})
-            self.bmc = self._extract_bmc(hw_wrapper.get("bmc"))
+            self.bmc = self._extract_bmc(
+                self.data.get("bmc") if isinstance(self.data, dict) else None
+            )
             self.input_name = input_name
         else:
             raise ValueError(
@@ -247,7 +249,7 @@ class HardwareInfo:
         return result
 
     def _extract_bmc(self, bmc: Any) -> Optional[Dict[str, Optional[str]]]:
-        """Copy BMC vendor and version from the hardware wrapper."""
+        """Copy BMC vendor and version from the lshw root."""
         if not isinstance(bmc, dict):
             return None
         return {
