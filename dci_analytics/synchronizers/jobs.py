@@ -335,6 +335,14 @@ def update_index(index):
                             "mapping": {"type": "nested"},
                         },
                     },
+                    {
+                        "tests_properties_to_nested": {
+                            "path_match": "tests.*",
+                            "match": "properties",
+                            "match_mapping_type": "object",
+                            "mapping": {"type": "nested"},
+                        },
+                    },
                 ],
                 "properties": {
                     "components": {"type": "nested"},
