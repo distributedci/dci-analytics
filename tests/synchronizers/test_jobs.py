@@ -206,6 +206,7 @@ def test_sync_one_job_skips_when_etag_unchanged(
     m_session.return_value.close.assert_called_once()
 
 
+@mock.patch("dci_analytics.synchronizers.jobs.update_nodes_data_cache_index")
 @mock.patch("dci_analytics.synchronizers.jobs.es.update_index_meta")
 @mock.patch("dci_analytics.synchronizers.jobs._get_api_connection")
 @mock.patch("dci_analytics.synchronizers.jobs.process")
@@ -214,7 +215,7 @@ def test_sync_one_job_skips_when_etag_unchanged(
 @mock.patch("dci_analytics.synchronizers.jobs.a_d_l.get_job_by_id")
 @mock.patch("dci_analytics.synchronizers.jobs.dci_db.get_session_db")
 def test_sync_one_job_syncs_when_etag_differs(
-    m_session, m_get_job, m_es_get, m_update_index, m_process, m_api, m_meta
+    m_session, m_get_job, m_es_get, m_update_index, m_process, m_api, m_meta, m_cache
 ):
     job = _job("etag-sql")
     m_get_job.return_value = job
@@ -228,6 +229,7 @@ def test_sync_one_job_syncs_when_etag_differs(
     m_meta.assert_called_once_with("jobs-alias", last_job_date="updated_at")
 
 
+@mock.patch("dci_analytics.synchronizers.jobs.update_nodes_data_cache_index")
 @mock.patch("dci_analytics.synchronizers.jobs.es.update_index_meta")
 @mock.patch("dci_analytics.synchronizers.jobs._get_api_connection")
 @mock.patch("dci_analytics.synchronizers.jobs.process")
@@ -236,7 +238,7 @@ def test_sync_one_job_syncs_when_etag_differs(
 @mock.patch("dci_analytics.synchronizers.jobs.a_d_l.get_job_by_id")
 @mock.patch("dci_analytics.synchronizers.jobs.dci_db.get_session_db")
 def test_sync_one_job_syncs_when_document_missing(
-    m_session, m_get_job, m_es_get, m_update_index, m_process, m_api, m_meta
+    m_session, m_get_job, m_es_get, m_update_index, m_process, m_api, m_meta, m_cache
 ):
     job = _job("etag-sql")
     m_get_job.return_value = job
@@ -248,3 +250,47 @@ def test_sync_one_job_syncs_when_document_missing(
 
     m_process.assert_called_once_with("jobs-alias", job, {"api": True})
     m_meta.assert_called_once_with("jobs-alias", last_job_date="updated_at")
+
+
+@mock.patch("dci_analytics.synchronizers.jobs.es.update_settings")
+@mock.patch("dci_analytics.synchronizers.jobs.es.update_index")
+def test_update_nodes_data_cache_index_new_index(m_update_index, m_update_settings):
+    m_update_index.return_value = True
+
+    jobs.update_nodes_data_cache_index()
+
+    m_update_index.assert_called_once_with(
+        jobs._INDEX_NODES_DATA_CACHE,
+        json={
+            "mappings": {
+                "dynamic_templates": jobs._DYNAMIC_TEMPLATES,
+                "properties": {"nodes": jobs._NODES_MAPPING},
+            },
+            "settings": jobs._INDEX_SETTINGS,
+        },
+    )
+    m_update_settings.assert_not_called()
+
+
+@mock.patch("dci_analytics.synchronizers.jobs.es.update_settings")
+@mock.patch("dci_analytics.synchronizers.jobs.es.update_index")
+def test_update_nodes_data_cache_index_existing_index(
+    m_update_index, m_update_settings
+):
+    m_update_index.return_value = False
+
+    jobs.update_nodes_data_cache_index()
+
+    m_update_settings.assert_called_once_with(
+        jobs._INDEX_NODES_DATA_CACHE, jobs._INDEX_SETTINGS
+    )
+
+
+@mock.patch("dci_analytics.synchronizers.jobs.es.update_index")
+def test_update_index_shares_nodes_mapping_with_cache(m_update_index):
+    jobs.update_index("jobs-new")
+
+    json = m_update_index.call_args[1]["json"]
+    assert json["mappings"]["properties"]["nodes"] == jobs._NODES_MAPPING
+    assert json["mappings"]["dynamic_templates"][:2] == jobs._DYNAMIC_TEMPLATES
+    assert json["settings"] == jobs._INDEX_SETTINGS

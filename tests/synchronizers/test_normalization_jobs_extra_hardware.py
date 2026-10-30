@@ -836,6 +836,75 @@ class TestBmc:
         assert result is not None
         assert result["bmc"] is None
 
+    def test_bios_settings_present(self):
+        """Test BIOS registry and attributes are copied onto the result."""
+        data = {
+            "hardware": {
+                "node": "sno5.vz.partnerci.bos2.lab",
+                "data": {
+                    "id": "computer",
+                    "class": "system",
+                    "bios_settings": {
+                        "registry": "BiosAttributeRegistry.v1_0_3",
+                        "attributes": {
+                            "ProcTurboMode": "Enabled",
+                            "SysProfile": "PerfPerWattOptimizedDapc",
+                            "OneTimeBootSeq": None,
+                        },
+                    },
+                },
+            }
+        }
+        result = hw.normalize("hardware.json", data)
+        assert result is not None
+        assert result["bios_settings"] == {
+            "registry": "BiosAttributeRegistry.v1_0_3",
+            "attributes": {
+                "ProcTurboMode": "Enabled",
+                "SysProfile": "PerfPerWattOptimizedDapc",
+                "OneTimeBootSeq": None,
+            },
+        }
+
+    def test_bios_settings_missing(self):
+        """Test missing BIOS settings become None."""
+        data = {
+            "hardware": {
+                "node": "test",
+                "data": {"id": "computer", "class": "system"},
+            }
+        }
+        result = hw.normalize("hardware.json", data)
+        assert result is not None
+        assert result["bios_settings"] is None
+
+    @pytest.mark.parametrize(
+        "bios_settings",
+        [
+            "Enabled",
+            {"registry": "BiosAttributeRegistry.v1_0_3"},
+            {
+                "registry": "BiosAttributeRegistry.v1_0_3",
+                "attributes": [{"name": "ProcTurboMode", "value": "Enabled"}],
+            },
+        ],
+    )
+    def test_bios_settings_invalid(self, bios_settings):
+        """Test BIOS settings without an attributes mapping become None."""
+        data = {
+            "hardware": {
+                "node": "test",
+                "data": {
+                    "id": "computer",
+                    "class": "system",
+                    "bios_settings": bios_settings,
+                },
+            }
+        }
+        result = hw.normalize("hardware.json", data)
+        assert result is not None
+        assert result["bios_settings"] is None
+
 
 class TestEdgeCases:
     """Test edge cases and error handling."""
