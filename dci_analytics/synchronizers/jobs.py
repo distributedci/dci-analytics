@@ -41,6 +41,34 @@ _INDEX = "jobs"
 _INDEX_JUNIT_CACHE = "jobs_cache_junit"
 _INDEX_NODES_DATA_CACHE = "jobs_cache_nodes_data"
 
+# shared by the jobs index and the nodes data cache index
+_DYNAMIC_TEMPLATES = [
+    {
+        "strings_as_keyword": {
+            "match_mapping_type": "string",
+            "mapping": {"type": "keyword"},
+        }
+    },
+    {
+        "nodes_to_nested": {
+            "path_match": "nodes.*",
+            "match_mapping_type": "object",
+            "mapping": {"type": "nested"},
+        },
+    },
+]
+_NODES_MAPPING = {
+    "type": "nested",
+    "properties": {
+        "hardware": {"type": "nested"},
+        "kernel": {"type": "nested"},
+    },
+}
+_INDEX_SETTINGS = {
+    "index.mapping.nested_objects.limit": 300000,
+    "index.mapping.total_fields.limit": 100000,
+}
+
 
 def parse_time(string_value):
     try:
@@ -321,20 +349,8 @@ def update_index(index):
         index,
         json={
             "mappings": {
-                "dynamic_templates": [
-                    {
-                        "strings_as_keyword": {
-                            "match_mapping_type": "string",
-                            "mapping": {"type": "keyword"},
-                        }
-                    },
-                    {
-                        "nodes_to_nested": {
-                            "path_match": "nodes.*",
-                            "match_mapping_type": "object",
-                            "mapping": {"type": "nested"},
-                        },
-                    },
+                "dynamic_templates": _DYNAMIC_TEMPLATES
+                + [
                     {
                         "tests_properties_to_nested": {
                             "path_match": "tests.*",
@@ -365,21 +381,28 @@ def update_index(index):
                             }
                         },
                     },
-                    "nodes": {
-                        "type": "nested",
-                        "properties": {
-                            "hardware": {"type": "nested"},
-                            "kernel": {"type": "nested"},
-                        },
-                    },
+                    "nodes": _NODES_MAPPING,
                 },
             },
-            "settings": {
-                "index.mapping.nested_objects.limit": 300000,
-                "index.mapping.total_fields.limit": 100000,
-            },
+            "settings": _INDEX_SETTINGS,
         },
     )
+
+
+def update_nodes_data_cache_index():
+    is_index_created = es.update_index(
+        _INDEX_NODES_DATA_CACHE,
+        json={
+            "mappings": {
+                "dynamic_templates": _DYNAMIC_TEMPLATES,
+                "properties": {"nodes": _NODES_MAPPING},
+            },
+            "settings": _INDEX_SETTINGS,
+        },
+    )
+    if not is_index_created:
+        # raise the limits of a cache index created before they were set
+        es.update_settings(_INDEX_NODES_DATA_CACHE, _INDEX_SETTINGS)
 
 
 def _get_api_connection():
@@ -403,6 +426,7 @@ def _get_api_connection():
 def _sync(index, unit, amount):
 
     is_index_created = update_index(index)
+    update_nodes_data_cache_index()
     api_conn = _get_api_connection()
 
     session_db = dci_db.get_session_db()
@@ -456,6 +480,7 @@ def sync_one_job(index, job_id):
             return
 
         is_index_created = update_index(index)
+        update_nodes_data_cache_index()
         api_conn = _get_api_connection()
 
         if is_index_created:

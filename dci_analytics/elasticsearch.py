@@ -139,6 +139,16 @@ def update_index(index, json):
     return is_index_created
 
 
+def update_settings(index, json):
+    url = "%s/%s/_settings" % (_ES_URL, index)
+    res = requests.put(url, json=json)
+    if res.status_code != 200:
+        logger.error(
+            "error while updating the settings of index %s: %s" % (index, res.text)
+        )
+    return res
+
+
 def update_index_meta(index, first_job_date=None, last_job_date=None):
     url = "%s/%s/_mapping" % (_ES_URL, index)
     logger.debug(f"url: {url}")

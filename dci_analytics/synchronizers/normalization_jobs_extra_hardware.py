@@ -35,6 +35,7 @@ class HardwareInfo:
     node: str
     data: Dict[str, Any]
     bmc: Optional[Dict[str, Optional[str]]]
+    bios_settings: Optional[Dict[str, Any]]
     input_name: str
 
     def __init__(self, input_name: str, raw_data: Dict[str, Any]) -> None:
@@ -53,6 +54,9 @@ class HardwareInfo:
             self.bmc = self._extract_bmc(
                 self.data.get("bmc") if isinstance(self.data, dict) else None
             )
+            self.bios_settings = self._extract_bios_settings(
+                self.data.get("bios_settings") if isinstance(self.data, dict) else None
+            )
             self.input_name = input_name
         else:
             raise ValueError(
@@ -66,7 +70,11 @@ class HardwareInfo:
         Returns:
             Flat hardware information dictionary
         """
-        result = {"node": self.node, "bmc": self.bmc}
+        result = {
+            "node": self.node,
+            "bmc": self.bmc,
+            "bios_settings": self.bios_settings,
+        }
 
         result.update(self._extract_system_info())
         result.update(self._extract_bios_info())
@@ -255,6 +263,18 @@ class HardwareInfo:
         return {
             "vendor": bmc.get("vendor"),
             "version": bmc.get("version"),
+        }
+
+    def _extract_bios_settings(self, bios_settings: Any) -> Optional[Dict[str, Any]]:
+        """Copy the Redfish BIOS registry and attributes from the lshw root."""
+        if not isinstance(bios_settings, dict):
+            return None
+        attributes = bios_settings.get("attributes")
+        if not isinstance(attributes, dict):
+            return None
+        return {
+            "registry": bios_settings.get("registry"),
+            "attributes": attributes,
         }
 
     def _extract_system_info(self) -> Dict[str, Optional[str]]:
